@@ -87,16 +87,6 @@ Live camera feeds from agent perspectives:
 - **Leaders (3)**: Full LLM capabilities, strategic decision-making, 45-second thought cycles
 - **Workers (97)**: Lightweight executors, instant command response, zero LLM cost
 
-### Cost Optimization
-
-| Deployment | Agents | API Calls/Hour | Cost/Hour |
-|------------|--------|----------------|-----------|
-| Traditional | 100 | ~6,000 | $18.00 |
-| Cortex | 100 | ~600 | $1.80 |
-| **Savings** | - | **90%** | **$16.20** |
-
----
-
 ## Quick Start
 
 ### Requirements
