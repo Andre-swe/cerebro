@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Status Panel</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 280px;
+            background: linear-gradient(180deg,
+                rgba(0, 0, 0, 0.9) 0%,
+                rgba(10, 10, 20, 0.85) 100%
+            );
+            border: 1px solid rgba(255, 107, 53, 0.5);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow:
+                0 0 30px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 107, 53, 0.05);
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff6b35;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-icon {
+            width: 8px;
+            height: 8px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #ff6b35; }
+            50% { opacity: 0.5; box-shadow: 0 0 10px #ff6b35; }
+        }
+
+        .bot-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .bot-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .bot-card:hover {
+            border-color: rgba(255, 107, 53, 0.5);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .bot-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .bot-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            color: #000;
+        }
+
+        .bot-avatar.marco { background: linear-gradient(135deg, #ff6b35, #ff8c5a); }
+        .bot-avatar.claude { background: linear-gradient(135deg, #4a9eff, #7bb8ff); }
+        .bot-avatar.jules { background: linear-gradient(135deg, #50c878, #7ddf9a); }
+
+        .bot-info {
+            flex: 1;
+        }
+
+        .bot-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .bot-role {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .emotion-badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .emotion-badge.calm { background: rgba(100, 200, 100, 0.2); border-color: #64c864; color: #64c864; }
+        .emotion-badge.happy { background: rgba(255, 215, 0, 0.2); border-color: #ffd700; color: #ffd700; }
+        .emotion-badge.excited { background: rgba(255, 165, 0, 0.2); border-color: #ffa500; color: #ffa500; }
+        .emotion-badge.curious { background: rgba(138, 43, 226, 0.2); border-color: #8a2be2; color: #8a2be2; }
+        .emotion-badge.angry { background: rgba(255, 50, 50, 0.2); border-color: #ff3232; color: #ff3232; }
+        .emotion-badge.frustrated { background: rgba(255, 100, 50, 0.2); border-color: #ff6432; color: #ff6432; }
+        .emotion-badge.sad { background: rgba(70, 130, 180, 0.2); border-color: #4682b4; color: #4682b4; }
+        .emotion-badge.worried { background: rgba(186, 85, 211, 0.2); border-color: #ba55d3; color: #ba55d3; }
+        .emotion-badge.neutral { background: rgba(150, 150, 150, 0.2); border-color: #969696; color: #969696; }
+
+        .emotion-icon {
+            font-size: 14px;
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .xp-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ff8c5a);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .xp-label {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* Connection status */
+        .connection-status {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff3232;
+        }
+
+        .connection-status.connected {
+            background: #50c878;
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="connection-status" id="connectionStatus"></div>
+        <div class="panel-header">
+            <div class="header-icon"></div>
+            Agent Status
+        </div>
+
+        <div id="botCards">
+            <!-- Bot cards will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        const EMOTION_MAP = {
+            'calm': { icon: '😌', class: 'calm' },
+            'happy': { icon: '😊', class: 'happy' },
+            'excited': { icon: '🤩', class: 'excited' },
+            'curious': { icon: '🤔', class: 'curious' },
+            'angry': { icon: '😠', class: 'angry' },
+            'frustrated': { icon: '😤', class: 'frustrated' },
+            'annoyed': { icon: '😒', class: 'frustrated' },
+            'sad': { icon: '😢', class: 'sad' },
+            'worried': { icon: '😟', class: 'worried' },
+            'attentive': { icon: '👀', class: 'curious' },
+            'proud': { icon: '😏', class: 'happy' },
+            'neutral': { icon: '😐', class: 'neutral' }
+        };
+
+        const bots = {
+            'Marco': { role: 'Builder', emotion: 'calm', activity: 'Idle', xp: 5, avatar: 'marco' },
+            'Claude': { role: 'Explorer', emotion: 'calm', activity: 'Idle', xp: 0, avatar: 'claude' },
+            'Jules': { role: 'Gatherer', emotion: 'calm', activity: 'Idle', xp: 0, avatar: 'jules' }
+        };
+
+        function renderBots() {
+            const container = document.getElementById('botCards');
+            container.innerHTML = '';
+
+            for (const [name, data] of Object.entries(bots)) {
+                const emotionData = EMOTION_MAP[data.emotion] || EMOTION_MAP['neutral'];
+                const xpPercent = Math.min(100, (data.xp % 100));
+
+                const card = document.createElement('div');
+                card.className = 'bot-card';
+                card.innerHTML = `
+                    <div class="bot-header">
+                        <div class="bot-avatar ${data.avatar}">${name[0]}</div>
+                        <div class="bot-info">
+                            <div class="bot-name">${name}</div>
+                            <div class="bot-role">${data.role}</div>
+                        </div>
+                    </div>
+                    <div class="status-row">
+                        <div class="emotion-badge ${emotionData.class}">
+                            <span class="emotion-icon">${emotionData.icon}</span>
+                            ${data.emotion}
+                        </div>
+                        <div class="activity-text">${data.activity}</div>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" style="width: ${xpPercent}%"></div>
+                    </div>
+                    <div class="xp-label">XP: ${data.xp}</div>
+                `;
+                container.appendChild(card);
+            }
+        }
+
+        // Initial render
+        renderBots();
+
+        // Connect to mindserver
+        try {
+            const socket = io('http://localhost:8080');
+
+            socket.on('connect', () => {
+                document.getElementById('connectionStatus').classList.add('connected');
+                console.log('Connected to mindserver');
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('connectionStatus').classList.remove('connected');
+            });
+
+            // Listen for soul events
+            socket.on('soul-event', (data) => {
+                const { botName, event } = data;
+
+                if (bots[botName]) {
+                    if (event.type === 'emotion' || event.emotion) {
+                        bots[botName].emotion = event.emotion || event.newEmotion || 'calm';
+                    }
+                    if (event.type === 'decision' && event.decision) {
+                        bots[botName].activity = event.decision.substring(0, 30);
+                    }
+                    if (event.type === 'evolution' && event.xp) {
+                        bots[botName].xp = event.xp;
+                    }
+                    renderBots();
+                }
+            });
+
+            // Listen for agent updates
+            socket.on('agents-update', (agents) => {
+                agents.forEach(agent => {
+                    if (bots[agent.name]) {
+                        // Update from agent data
+                    }
+                });
+            });
+
+        } catch (e) {
+            console.error('Socket connection failed:', e);
+        }
+    </script>
+</body>
+</html>

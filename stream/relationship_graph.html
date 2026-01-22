@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relationship Graph</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .panel {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 300px;
+            height: 280px;
+            background: linear-gradient(180deg,
+                rgba(0, 0, 0, 0.9) 0%,
+                rgba(10, 10, 20, 0.85) 100%
+            );
+            border: 1px solid rgba(255, 107, 53, 0.5);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow:
+                0 0 30px rgba(0, 0, 0, 0.5),
+                inset 0 0 20px rgba(255, 107, 53, 0.05);
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ff6b35;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-icon {
+            width: 8px;
+            height: 8px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .graph-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .legend-line {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .legend-line.positive { background: #50c878; }
+        .legend-line.negative { background: #ff4444; }
+        .legend-line.neutral { background: #888888; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="header-icon"></div>
+            Relationship Network
+        </div>
+
+        <div class="graph-container">
+            <canvas id="graphCanvas"></canvas>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-line positive"></div>
+                <span>Friendly</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line neutral"></div>
+                <span>Neutral</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-line negative"></div>
+                <span>Hostile</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // High DPI support
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const width = rect.width;
+        const height = rect.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // Node positions (triangle layout)
+        const nodes = {
+            'Marco': { x: centerX, y: centerY - 60, color: '#ff6b35', letter: 'M' },
+            'Claude': { x: centerX - 70, y: centerY + 50, color: '#4a9eff', letter: 'C' },
+            'Jules': { x: centerX + 70, y: centerY + 50, color: '#50c878', letter: 'J' },
+            'Player': { x: centerX, y: centerY + 10, color: '#ffffff', letter: 'P' }
+        };
+
+        // Relationships (will be updated via socket)
+        let relationships = {
+            'Marco-Claude': { value: 0.5 },
+            'Marco-Jules': { value: 0.1 },
+            'Claude-Jules': { value: 0.2 },
+            'Marco-Player': { value: -0.9 },
+            'Claude-Player': { value: 0 },
+            'Jules-Player': { value: 0 }
+        };
+
+        function getLineColor(value) {
+            if (value > 0.3) return { color: '#50c878', alpha: Math.min(1, 0.3 + value * 0.7) };
+            if (value < -0.3) return { color: '#ff4444', alpha: Math.min(1, 0.3 + Math.abs(value) * 0.7) };
+            return { color: '#888888', alpha: 0.3 };
+        }
+
+        function drawGraph() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw connections
+            for (const [key, rel] of Object.entries(relationships)) {
+                const [from, to] = key.split('-');
+                const fromNode = nodes[from];
+                const toNode = nodes[to];
+
+                if (fromNode && toNode) {
+                    const lineStyle = getLineColor(rel.value);
+
+                    ctx.beginPath();
+                    ctx.moveTo(fromNode.x, fromNode.y);
+                    ctx.lineTo(toNode.x, toNode.y);
+                    ctx.strokeStyle = lineStyle.color;
+                    ctx.globalAlpha = lineStyle.alpha;
+                    ctx.lineWidth = 2 + Math.abs(rel.value) * 2;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+
+                    // Draw relationship value
+                    const midX = (fromNode.x + toNode.x) / 2;
+                    const midY = (fromNode.y + toNode.y) / 2;
+                    ctx.fillStyle = lineStyle.color;
+                    ctx.font = '10px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.fillText((rel.value * 100).toFixed(0) + '%', midX, midY - 5);
+                }
+            }
+
+            // Draw nodes
+            for (const [name, node] of Object.entries(nodes)) {
+                // Outer glow
+                const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, 30);
+                gradient.addColorStop(0, node.color + '40');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Node circle
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 18, 0, Math.PI * 2);
+                ctx.fillStyle = node.color;
+                ctx.fill();
+
+                // Letter
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 14px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.letter, node.x, node.y);
+
+                // Name label
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '11px Inter';
+                ctx.fillText(name, node.x, node.y + 30);
+            }
+        }
+
+        // Animate node positions slightly
+        let time = 0;
+        function animate() {
+            time += 0.02;
+
+            // Subtle floating animation
+            for (const [name, node] of Object.entries(nodes)) {
+                if (name !== 'Player') {
+                    node.y += Math.sin(time + node.x) * 0.1;
+                }
+            }
+
+            drawGraph();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // Connect to mindserver for updates
+        try {
+            const socket = io('http://localhost:8080');
+
+            socket.on('soul-event', (data) => {
+                const { botName, event } = data;
+
+                if (event.type === 'relationship') {
+                    const target = event.target;
+                    const key1 = `${botName}-${target}`;
+                    const key2 = `${target}-${botName}`;
+
+                    // Average fondness and trust for display
+                    const value = (event.fondness + event.trust) / 2;
+
+                    if (relationships[key1] !== undefined) {
+                        relationships[key1].value = value;
+                    } else if (relationships[key2] !== undefined) {
+                        relationships[key2].value = value;
+                    } else {
+                        relationships[key1] = { value };
+                    }
+                }
+            });
+
+        } catch (e) {
+            console.error('Socket connection failed:', e);
+        }
+    </script>
+</body>
+</html>

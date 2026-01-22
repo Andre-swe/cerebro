@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Activity Ticker</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+        }
+
+        .ticker-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: linear-gradient(180deg,
+                rgba(0, 0, 0, 0.95) 0%,
+                rgba(5, 5, 15, 0.98) 100%
+            );
+            border-top: 2px solid #ff6b35;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .ticker-label {
+            flex-shrink: 0;
+            padding: 0 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ff6b35;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-right: 1px solid rgba(255, 107, 53, 0.3);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .brain-icon {
+            font-size: 18px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .ticker-track {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+
+        .ticker-content {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            position: absolute;
+            white-space: nowrap;
+            animation: scroll 60s linear infinite;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 30px;
+            height: 100%;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ticker-item:last-child {
+            border-right: none;
+        }
+
+        .item-bot {
+            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .item-bot.marco { background: rgba(255, 107, 53, 0.3); color: #ff8c5a; }
+        .item-bot.claude { background: rgba(74, 158, 255, 0.3); color: #7bb8ff; }
+        .item-bot.jules { background: rgba(80, 200, 120, 0.3); color: #7ddf9a; }
+
+        .item-type {
+            font-size: 14px;
+        }
+
+        .item-type.decision { color: #ffd700; }
+        .item-type.emotion { color: #ff69b4; }
+        .item-type.thought { color: #00bfff; }
+        .item-type.relationship { color: #ff6b35; }
+        .item-type.evolution { color: #9370db; }
+
+        .item-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-time {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 10px;
+        }
+
+        /* Live events container */
+        .live-events {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 400px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(0, 0, 0, 0.95) 30%
+            );
+            overflow: hidden;
+        }
+
+        .live-event {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s ease-out;
+            padding: 6px 12px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 6px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: blink 0.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-container">
+        <div class="ticker-label">
+            <span class="brain-icon">🧠</span>
+            NEURAL FEED
+        </div>
+
+        <div class="ticker-track">
+            <div class="ticker-content" id="tickerContent">
+                <!-- Ticker items will be dynamically added -->
+            </div>
+        </div>
+
+        <div class="live-events" id="liveEvents">
+            <!-- Latest event shown here -->
+        </div>
+
+        <div class="scanlines"></div>
+    </div>
+
+    <script>
+        const TYPE_ICONS = {
+            'decision': '⚡',
+            'emotion': '💭',
+            'thought': '💡',
+            'relationship': '🔗',
+            'evolution': '✨'
+        };
+
+        const tickerItems = [];
+        const MAX_ITEMS = 50;
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function addTickerItem(botName, type, text) {
+            const item = {
+                bot: botName,
+                type,
+                text: text.substring(0, 80),
+                time: Date.now()
+            };
+
+            tickerItems.unshift(item);
+            if (tickerItems.length > MAX_ITEMS) {
+                tickerItems.pop();
+            }
+
+            renderTicker();
+            showLiveEvent(item);
+        }
+
+        function renderTicker() {
+            const container = document.getElementById('tickerContent');
+
+            // Create items twice for seamless loop
+            let html = '';
+            const allItems = [...tickerItems, ...tickerItems];
+
+            for (const item of allItems) {
+                const botClass = item.bot.toLowerCase();
+                const typeClass = item.type;
+
+                html += `
+                    <div class="ticker-item">
+                        <span class="item-bot ${botClass}">${item.bot}</span>
+                        <span class="item-type ${typeClass}">${TYPE_ICONS[item.type] || '•'}</span>
+                        <span class="item-text">${item.text}</span>
+                        <span class="item-time">${formatTime(item.time)}</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // Adjust animation duration based on content
+            const contentWidth = container.scrollWidth / 2;
+            const duration = Math.max(30, contentWidth / 50);
+            container.style.animationDuration = duration + 's';
+        }
+
+        function showLiveEvent(item) {
+            const container = document.getElementById('liveEvents');
+            const botClass = item.bot.toLowerCase();
+            const typeClass = item.type;
+
+            container.innerHTML = `
+                <div class="live-event">
+                    <div class="live-dot"></div>
+                    <span class="item-bot ${botClass}">${item.bot}</span>
+                    <span class="item-type ${typeClass}">${TYPE_ICONS[item.type] || '•'}</span>
+                    <span class="item-text">${item.text}</span>
+                </div>
+            `;
+        }
+
+        // Add some initial items
+        addTickerItem('Marco', 'thought', 'Initializing cognitive systems...');
+        addTickerItem('Claude', 'thought', 'Scanning environment...');
+        addTickerItem('Jules', 'thought', 'Ready to gather resources...');
+
+        // Connect to mindserver
+        try {
+            const socket = io('http://localhost:8080');
+
+            socket.on('connect', () => {
+                addTickerItem('System', 'thought', 'Connected to Mindserver');
+            });
+
+            socket.on('soul-event', (data) => {
+                const { botName, event } = data;
+
+                let text = '';
+                let type = event.type || 'thought';
+
+                switch (event.type) {
+                    case 'decision':
+                        text = event.decision || 'Made a decision';
+                        break;
+                    case 'emotion':
+                        text = `Feeling ${event.newEmotion || event.emotion}`;
+                        if (event.trigger) text += ` (${event.trigger})`;
+                        type = 'emotion';
+                        break;
+                    case 'thought':
+                        text = event.thought || event.content || 'Processing...';
+                        break;
+                    case 'relationship':
+                        text = `${event.category}: ${event.target} (${event.interactionType || event.relationship})`;
+                        break;
+                    case 'evolution':
+                        text = `Trait change! XP: ${event.xp}`;
+                        break;
+                    default:
+                        text = JSON.stringify(event).substring(0, 60);
+                }
+
+                addTickerItem(botName, type, text);
+            });
+
+        } catch (e) {
+            console.error('Socket connection failed:', e);
+        }
+    </script>
+</body>
+</html>
