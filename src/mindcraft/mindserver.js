@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { reconnectManager } from './reconnect_manager.js';
 import path from 'path';
 import fs from 'fs';
 import express from 'express';
@@ -367,6 +368,9 @@ export function createMindServer(host_public = false, port = 8080) {
             if (worker_connections[workerName]) {
                 worker_connections[workerName].socket = socket;
                 worker_connections[workerName].in_game = true;
+                socket._workerName = workerName;
+                socket._leaderName = leaderName;
+                reconnectManager.clearWorker(workerName);
                 workersStatusUpdate();
 
                 // Notify leader of new worker
@@ -378,6 +382,21 @@ export function createMindServer(host_public = false, port = 8080) {
         });
 
         // Worker sends status update
+        // Worker disconnect handler
+        socket.on("worker-disconnect", () => {
+            const workerName = socket._workerName;
+            const leaderName = socket._leaderName;
+            if (workerName && worker_connections[workerName]) {
+                console.log("[MindServer] Worker " + workerName + " disconnected");
+                worker_connections[workerName].in_game = false;
+                worker_connections[workerName].socket = null;
+                workersStatusUpdate();
+                if (worker_connections[workerName].settings) {
+                    reconnectManager.trackDisconnect(workerName, leaderName, worker_connections[workerName].settings);
+                }
+            }
+        });
+
         socket.on('worker-status', (status) => {
             commandRelay.updateWorkerStatus(status.worker, status);
             // Forward to leader and listeners
@@ -430,12 +449,16 @@ export function createMindServer(host_public = false, port = 8080) {
 
         // Get all workers status (batched for efficiency)
         socket.on('get-workers-batch-status', (callback) => {
+        socket.on("get-reconnect-status", (callback) => {
+            callback(reconnectManager.getStatus());
+        });
             callback(commandRelay.getBatchedWorkerStatus());
         });
     });
 
     let host = host_public ? '0.0.0.0' : 'localhost';
     server.listen(port, host, () => {
+        reconnectManager.start();
         console.log(`MindServer running on port ${port}`);
     });
 

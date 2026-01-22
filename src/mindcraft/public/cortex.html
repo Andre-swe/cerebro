@@ -691,8 +691,32 @@
         }
 
         .worker-tag.error {
+        .worker-tag.offline {
+            background: rgba(100, 100, 100, 0.3);
+            border-color: #666;
+            color: #888;
+            opacity: 0.6;
+        }
             border-color: var(--error-red);
+        .worker-tag.offline {
+            background: rgba(100, 100, 100, 0.3);
+            border-color: #666;
+            color: #888;
+            opacity: 0.6;
+        }
             background: rgba(239, 68, 68, 0.15);
+        .worker-tag.offline {
+            background: rgba(100, 100, 100, 0.3);
+            border-color: #666;
+            color: #888;
+            opacity: 0.6;
+        }
+        }
+        .worker-tag.offline {
+            background: rgba(100, 100, 100, 0.3);
+            border-color: #666;
+            color: #888;
+            opacity: 0.6;
         }
 
         /* ========== NEURAL FEED PANEL ========== */
@@ -1876,7 +1900,7 @@
                         <div class="workers-grid">
                             ${bot.data.workers.map(w => {
                                 const worker = workers.get(w);
-                                const statusClass = worker?.status === 'executing' ? 'executing' : worker?.status === 'error' ? 'error' : '';
+                                const statusClass = !worker?.in_game ? 'offline' : worker?.status === 'executing' ? 'executing' : worker?.status === 'error' ? 'error' : '';
                                 return `<span class="worker-tag ${statusClass}">${w}</span>`;
                             }).join('')}
                         </div>
@@ -2227,6 +2251,7 @@
                         position: null,
                         leader: w.leader,
                         status: w.status || 'idle',
+                        in_game: w.in_game || false,
                         health: 20,
                         gamePosition: null
                     });
@@ -2236,6 +2261,7 @@
                     }
                 } else {
                     workers.get(w.name).status = w.status;
+                    workers.get(w.name).in_game = w.in_game;
                 }
             });
             updateCounts();
@@ -2373,8 +2399,10 @@
 
         function updateCounts() {
             document.getElementById('leaderCount').textContent = leaders.size;
-            document.getElementById('workerCount').textContent = workers.size;
-            document.getElementById('totalCount').textContent = leaders.size + workers.size;
+            const onlineWorkers = Array.from(workers.values()).filter(w => w.in_game).length;
+            document.getElementById('workerCount').textContent = onlineWorkers + '/' + workers.size;
+            const onlineLeaders = Array.from(leaders.values()).filter(l => l.status === 'active').length;
+            document.getElementById('totalCount').textContent = (onlineLeaders + onlineWorkers) + '/' + (leaders.size + workers.size);
         }
 
         // ========== VISION PANEL ==========
