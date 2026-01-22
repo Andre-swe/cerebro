@@ -75,7 +75,6 @@ Live camera feeds from agent perspectives:
    +-----+-----+         +-----+-----+         +-----+-----+
    |   ALPHA   |         |   BETA    |         |   GAMMA   |
    |  (Leader) |         |  (Leader) |         |  (Leader) |
-   |  Full LLM |         |  Full LLM |         |  Full LLM |
    +-----+-----+         +-----+-----+         +-----+-----+
          |                     |                     |
    +-----+-----+         +-----+-----+         +-----+-----+
