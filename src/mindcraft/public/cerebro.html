@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEREBRO - Neural Hive Interface</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --abyss: #030308;
+            --void: #08080f;
+            --deep: #0d0d18;
+            --surface: #141422;
+            --elevated: #1a1a2e;
+
+            --cyan-glow: #00ffff;
+            --cyan-dim: rgba(0, 255, 255, 0.4);
+            --cyan-faint: rgba(0, 255, 255, 0.12);
+
+            --gold: #ffd93d;
+            --gold-dim: rgba(255, 217, 61, 0.5);
+
+            --worker-blue: #3b82f6;
+            --worker-dim: rgba(59, 130, 246, 0.4);
+
+            --chat-green: #10b981;
+            --thought-purple: #8b5cf6;
+            --emotion-pink: #ec4899;
+            --command-orange: #f59e0b;
+            --status-teal: #14b8a6;
+            --error-red: #ef4444;
+
+            --text-primary: #e8e8f0;
+            --text-secondary: rgba(232, 232, 240, 0.6);
+            --text-muted: rgba(232, 232, 240, 0.35);
+
+            --relationship-strong: #22c55e;
+            --relationship-medium: #eab308;
+            --relationship-weak: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--abyss);
+            font-family: 'Oxanium', sans-serif;
+            color: var(--text-primary);
+        }
+
+        /* ========== BACKGROUND LAYERS ========== */
+        .neural-chamber {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 20% 20%, rgba(139, 92, 246, 0.02) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 30%, rgba(236, 72, 153, 0.02) 0%, transparent 50%),
+                var(--abyss);
+        }
+
+        .hex-grid {
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 15V37L30 52L0 37V15Z' fill='none' stroke='rgba(0,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+            background-size: 60px 52px;
+            opacity: 0.5;
+        }
+
+        .particle-field {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(1px 1px at 10% 20%, var(--cyan-dim), transparent),
+                radial-gradient(1px 1px at 30% 70%, var(--gold-dim), transparent),
+                radial-gradient(1px 1px at 60% 30%, var(--cyan-dim), transparent),
+                radial-gradient(1px 1px at 80% 80%, var(--worker-dim), transparent),
+                radial-gradient(1px 1px at 50% 50%, var(--cyan-dim), transparent);
+            background-size: 100% 100%;
+            animation: particleDrift 20s linear infinite;
+        }
+
+        @keyframes particleDrift {
+            0% { transform: translateY(0) translateX(0); }
+            50% { transform: translateY(-20px) translateX(10px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+
+        /* ========== HEADER ========== */
+        .cerebro-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: linear-gradient(180deg, rgba(8, 8, 15, 0.98) 0%, rgba(8, 8, 15, 0.8) 100%);
+            border-bottom: 1px solid var(--cyan-faint);
+            z-index: 200;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            position: relative;
+        }
+
+        .brand-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 2px solid var(--cyan-glow);
+            border-radius: 50%;
+            animation: iconPulse 3s ease-in-out infinite;
+        }
+
+        .brand-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: var(--cyan-glow);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 6px;
+            color: var(--cyan-glow);
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .brand-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .metrics-row {
+            display: flex;
+            gap: 32px;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .metric-value.leaders { color: var(--gold); text-shadow: 0 0 10px var(--gold-dim); }
+        .metric-value.workers { color: var(--worker-blue); text-shadow: 0 0 10px var(--worker-dim); }
+        .metric-value.total { color: var(--cyan-glow); text-shadow: 0 0 10px var(--cyan-dim); }
+
+        .metric-label {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--surface);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--cyan-glow);
+            box-shadow: 0 0 10px var(--cyan-glow);
+            animation: statusBlink 2s ease-in-out infinite;
+        }
+
+        .status-dot.offline { background: var(--error-red); box-shadow: 0 0 10px var(--error-red); }
+
+        @keyframes statusBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        /* ========== MAIN LAYOUT ========== */
+        .main-container {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 420px;
+            bottom: 0;
+            display: flex;
+        }
+
+        /* ========== CANVAS AREA ========== */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #mindCanvas {
+            position: absolute;
+            cursor: grab;
+        }
+
+        #mindCanvas:active { cursor: grabbing; }
+
+        /* Canvas Controls */
+        .canvas-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(8, 8, 15, 0.9);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 8px;
+        }
+
+        .ctrl-btn {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--cyan-faint);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .ctrl-btn:hover {
+            border-color: var(--cyan-dim);
+            color: var(--cyan-glow);
+            background: var(--cyan-faint);
+        }
+
+        .ctrl-btn.active {
+            background: var(--cyan-glow);
+            color: var(--abyss);
+            border-color: var(--cyan-glow);
+        }
+
+        /* Legend */
+        .canvas-legend {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 12px 16px;
+            background: rgba(8, 8, 15, 0.9);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 8px;
+        }
+
+        .legend-title {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.leader { background: var(--gold); box-shadow: 0 0 8px var(--gold-dim); }
+        .legend-dot.worker { background: var(--worker-blue); }
+        .legend-line {
+            width: 24px;
+            height: 2px;
+        }
+        .legend-line.strong { background: var(--relationship-strong); }
+        .legend-line.medium { background: var(--relationship-medium); }
+        .legend-line.weak { background: var(--relationship-weak); }
+
+        /* ========== BOT DETAIL PANEL ========== */
+        .bot-detail-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(8, 8, 15, 0.95);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 12px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(20px);
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        .bot-detail-panel.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--cyan-faint);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detail-bot-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .detail-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .detail-avatar.leader {
+            background: linear-gradient(135deg, var(--gold) 0%, #ff9500 100%);
+            color: var(--abyss);
+            box-shadow: 0 0 20px var(--gold-dim);
+        }
+
+        .detail-avatar.worker {
+            background: linear-gradient(135deg, var(--worker-blue) 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .detail-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .detail-role {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .detail-close {
+            width: 28px;
+            height: 28px;
+            background: transparent;
+            border: 1px solid var(--cyan-faint);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .detail-close:hover {
+            border-color: var(--error-red);
+            color: var(--error-red);
+        }
+
+        .detail-body {
+            padding: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section:last-child { margin-bottom: 0; }
+
+        .section-header {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--cyan-faint);
+        }
+
+        /* Emotion Display */
+        .emotion-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface);
+            border-radius: 8px;
+        }
+
+        .emotion-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+        .emotion-info {
+            flex: 1;
+        }
+
+        .emotion-name {
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: capitalize;
+        }
+
+        .emotion-bar {
+            margin-top: 6px;
+            height: 4px;
+            background: var(--elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .emotion-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* Emotion History */
+        .emotion-history {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .emotion-chip {
+            padding: 4px 8px;
+            background: var(--surface);
+            border-radius: 4px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .emotion-chip-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        /* Relationships */
+        .relationship-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .relationship-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface);
+            border-radius: 6px;
+        }
+
+        .rel-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--elevated);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .rel-info {
+            flex: 1;
+        }
+
+        .rel-name {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .rel-trust {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .trust-bar {
+            flex: 1;
+            height: 3px;
+            background: var(--elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .trust-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        .trust-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        /* Workers List */
+        .workers-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .worker-tag {
+            padding: 4px 10px;
+            background: var(--worker-dim);
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--worker-blue);
+            border: 1px solid transparent;
+        }
+
+        .worker-tag.executing {
+            border-color: var(--command-orange);
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .worker-tag.error {
+            border-color: var(--error-red);
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        /* ========== NEURAL FEED PANEL ========== */
+        .feed-panel {
+            position: fixed;
+            top: 56px;
+            right: 0;
+            bottom: 0;
+            width: 420px;
+            background: linear-gradient(270deg, rgba(8, 8, 15, 0.98) 0%, rgba(8, 8, 15, 0.95) 100%);
+            border-left: 1px solid var(--cyan-faint);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        /* Feed Categories */
+        .feed-categories {
+            display: flex;
+            padding: 0;
+            border-bottom: 1px solid var(--cyan-faint);
+            background: var(--void);
+        }
+
+        .feed-cat {
+            flex: 1;
+            padding: 14px 8px;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            position: relative;
+        }
+
+        .feed-cat:hover {
+            color: var(--text-secondary);
+            background: var(--surface);
+        }
+
+        .feed-cat.active {
+            color: var(--cyan-glow);
+            border-bottom-color: var(--cyan-glow);
+            background: var(--cyan-faint);
+        }
+
+        .feed-cat .cat-count {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            background: var(--surface);
+            border-radius: 8px;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feed-cat.active .cat-count {
+            background: var(--cyan-glow);
+            color: var(--abyss);
+        }
+
+        .feed-cat[data-cat="chat"] { --cat-color: var(--chat-green); }
+        .feed-cat[data-cat="thought"] { --cat-color: var(--thought-purple); }
+        .feed-cat[data-cat="emotion"] { --cat-color: var(--emotion-pink); }
+        .feed-cat[data-cat="command"] { --cat-color: var(--command-orange); }
+        .feed-cat[data-cat="status"] { --cat-color: var(--status-teal); }
+
+        .feed-cat[data-cat="chat"].active { color: var(--chat-green); border-bottom-color: var(--chat-green); }
+        .feed-cat[data-cat="thought"].active { color: var(--thought-purple); border-bottom-color: var(--thought-purple); }
+        .feed-cat[data-cat="emotion"].active { color: var(--emotion-pink); border-bottom-color: var(--emotion-pink); }
+        .feed-cat[data-cat="command"].active { color: var(--command-orange); border-bottom-color: var(--command-orange); }
+        .feed-cat[data-cat="status"].active { color: var(--status-teal); border-bottom-color: var(--status-teal); }
+
+        /* Feed Stream */
+        .feed-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .feed-stream::-webkit-scrollbar { width: 6px; }
+        .feed-stream::-webkit-scrollbar-track { background: var(--void); }
+        .feed-stream::-webkit-scrollbar-thumb { background: var(--cyan-faint); border-radius: 3px; }
+
+        .feed-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .feed-empty-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+
+        /* Feed Items */
+        .feed-item {
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            background: var(--surface);
+            border-radius: 8px;
+            border-left: 3px solid var(--cyan-dim);
+            animation: feedSlide 0.3s ease;
+            transition: all 0.2s;
+        }
+
+        .feed-item:hover {
+            background: var(--elevated);
+        }
+
+        @keyframes feedSlide {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Category-specific borders */
+        .feed-item.chat { border-left-color: var(--chat-green); }
+        .feed-item.thought { border-left-color: var(--thought-purple); }
+        .feed-item.emotion { border-left-color: var(--emotion-pink); }
+        .feed-item.command { border-left-color: var(--command-orange); }
+        .feed-item.status { border-left-color: var(--status-teal); }
+        .feed-item.error { border-left-color: var(--error-red); }
+
+        /* Bot type indicators */
+        .feed-item.leader { background: linear-gradient(90deg, rgba(255, 217, 61, 0.05) 0%, var(--surface) 100%); }
+        .feed-item.worker { background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, var(--surface) 100%); }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .item-agent {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .item-agent.leader { color: var(--gold); }
+        .item-agent.worker { color: var(--worker-blue); }
+
+        .item-badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .item-badge.chat { background: rgba(16, 185, 129, 0.2); color: var(--chat-green); }
+        .item-badge.thought { background: rgba(139, 92, 246, 0.2); color: var(--thought-purple); }
+        .item-badge.emotion { background: rgba(236, 72, 153, 0.2); color: var(--emotion-pink); }
+        .item-badge.command { background: rgba(245, 158, 11, 0.2); color: var(--command-orange); }
+        .item-badge.status { background: rgba(20, 184, 166, 0.2); color: var(--status-teal); }
+        .item-badge.error { background: rgba(239, 68, 68, 0.2); color: var(--error-red); }
+
+        .item-time {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .item-content {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .item-content.emotion-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .emotion-transition {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .emotion-state {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: capitalize;
+        }
+
+        .emotion-arrow {
+            color: var(--text-muted);
+        }
+
+        .item-target {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--worker-blue);
+        }
+
+        .item-command-text {
+            padding: 6px 10px;
+            margin-top: 6px;
+            background: var(--void);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--command-orange);
+        }
+
+        /* ========== BACK BUTTON ========== */
+        .back-link {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--cyan-faint);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .back-link:hover {
+            border-color: var(--cyan-glow);
+            color: var(--cyan-glow);
+            background: var(--cyan-faint);
+        }
+
+        /* ========== BOT VISION PANEL ========== */
+        .vision-panel {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 420px;
+            bottom: 0;
+            background: var(--abyss);
+            z-index: 80;
+            display: none;
+            flex-direction: column;
+        }
+
+        .vision-panel.active {
+            display: flex;
+        }
+
+        .vision-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--void);
+            border-bottom: 1px solid var(--cyan-faint);
+        }
+
+        .vision-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vision-title-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--cyan-glow) 0%, var(--thought-purple) 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .vision-title-text {
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: var(--cyan-glow);
+        }
+
+        .vision-close {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--cyan-faint);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .vision-close:hover {
+            border-color: var(--error-red);
+            color: var(--error-red);
+        }
+
+        .vision-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 16px;
+            overflow: auto;
+        }
+
+        @media (max-width: 1400px) {
+            .vision-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .vision-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .vision-card {
+            background: var(--surface);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+        }
+
+        .vision-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--void);
+            border-bottom: 1px solid var(--cyan-faint);
+        }
+
+        .vision-card-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vision-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold) 0%, #ff9500 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--abyss);
+            box-shadow: 0 0 15px var(--gold-dim);
+        }
+
+        .vision-card-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--gold);
+        }
+
+        .vision-card-port {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-muted);
+            padding: 4px 8px;
+            background: var(--surface);
+            border-radius: 4px;
+        }
+
+        .vision-card-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        .vision-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--chat-green);
+            box-shadow: 0 0 8px var(--chat-green);
+            animation: statusBlink 2s ease-in-out infinite;
+        }
+
+        .vision-status-dot.offline {
+            background: var(--error-red);
+            box-shadow: 0 0 8px var(--error-red);
+        }
+
+        .vision-card-body {
+            flex: 1;
+            position: relative;
+            background: var(--deep);
+            min-height: 250px;
+        }
+
+        .vision-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .vision-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            gap: 12px;
+        }
+
+        .vision-placeholder-icon {
+            font-size: 40px;
+            opacity: 0.3;
+        }
+
+        .vision-placeholder-text {
+            text-align: center;
+            max-width: 200px;
+        }
+
+        .vision-reload-btn {
+            margin-top: 8px;
+            padding: 6px 14px;
+            background: transparent;
+            border: 1px solid var(--cyan-faint);
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .vision-reload-btn:hover {
+            border-color: var(--cyan-glow);
+            color: var(--cyan-glow);
+            background: var(--cyan-faint);
+        }
+
+        /* Vision toggle button style */
+        .ctrl-btn.vision {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-color: var(--cyan-dim);
+        }
+
+        .ctrl-btn.vision:hover,
+        .ctrl-btn.vision.active {
+            background: linear-gradient(135deg, var(--cyan-glow) 0%, var(--thought-purple) 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* ========== LOADING OVERLAY ========== */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--abyss);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-brain {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .loading-brain::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 3px solid var(--cyan-faint);
+            border-top-color: var(--cyan-glow);
+            border-radius: 50%;
+            animation: loadSpin 1s linear infinite;
+        }
+
+        .loading-brain::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--cyan-faint);
+            border-bottom-color: var(--gold);
+            border-radius: 50%;
+            animation: loadSpin 0.7s linear infinite reverse;
+        }
+
+        @keyframes loadSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 12px;
+            letter-spacing: 6px;
+            color: var(--cyan-glow);
+            animation: loadPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes loadPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* ========== SCANLINES & EFFECTS ========== */
+        .scanlines {
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+            pointer-events: none;
+            z-index: 9000;
+        }
+
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(3, 3, 8, 0.6) 100%);
+            pointer-events: none;
+            z-index: 8999;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-brain"></div>
+        <div class="loading-text">INITIALIZING NEURAL LINK</div>
+    </div>
+
+    <div class="neural-chamber">
+        <div class="hex-grid"></div>
+        <div class="particle-field"></div>
+
+        <!-- Header -->
+        <header class="cerebro-header">
+            <div class="brand">
+                <div class="brand-icon"></div>
+                <div class="brand-text">
+                    <div class="brand-title">CEREBRO</div>
+                    <div class="brand-sub">NEURAL HIVE INTERFACE</div>
+                </div>
+            </div>
+
+            <div class="metrics-row">
+                <div class="metric">
+                    <div class="metric-value leaders" id="leaderCount">0</div>
+                    <div class="metric-label">LEADERS</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value workers" id="workerCount">0</div>
+                    <div class="metric-label">WORKERS</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value total" id="totalCount">0</div>
+                    <div class="metric-label">TOTAL</div>
+                </div>
+            </div>
+
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="connectionStatus">CONNECTING</span>
+            </div>
+        </header>
+
+        <!-- Main Canvas Area -->
+        <div class="main-container">
+            <div class="canvas-area">
+                <canvas id="mindCanvas"></canvas>
+
+                <div class="canvas-legend">
+                    <div class="legend-title">NETWORK LEGEND</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-dot leader"></div>
+                            <span>Leader Node</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot worker"></div>
+                            <span>Worker Node</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line strong"></div>
+                            <span>Strong Bond</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line medium"></div>
+                            <span>Neutral</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line weak"></div>
+                            <span>Weak Bond</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="canvas-controls">
+                    <button class="ctrl-btn" id="zoomIn">ZOOM +</button>
+                    <button class="ctrl-btn" id="zoomOut">ZOOM -</button>
+                    <button class="ctrl-btn" id="resetView">RESET</button>
+                    <button class="ctrl-btn active" id="toggleLabels">LABELS</button>
+                    <button class="ctrl-btn active" id="toggleWorkers">WORKERS</button>
+                    <button class="ctrl-btn active" id="toggleRelationships">BONDS</button>
+                    <button class="ctrl-btn vision" id="toggleVision">👁 VISION</button>
+                </div>
+
+                <!-- Bot Detail Panel -->
+                <div class="bot-detail-panel" id="botDetailPanel">
+                    <div class="detail-header">
+                        <div class="detail-bot-info">
+                            <div class="detail-avatar" id="detailAvatar">A</div>
+                            <div>
+                                <div class="detail-name" id="detailName">Bot Name</div>
+                                <div class="detail-role" id="detailRole">LEADER</div>
+                            </div>
+                        </div>
+                        <button class="detail-close" id="detailClose">&times;</button>
+                    </div>
+                    <div class="detail-body" id="detailBody"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vision Panel (Bot POV Views) -->
+        <div class="vision-panel" id="visionPanel">
+            <div class="vision-header">
+                <div class="vision-title">
+                    <div class="vision-title-icon">👁</div>
+                    <span class="vision-title-text">LEADER VISION FEED</span>
+                </div>
+                <button class="vision-close" id="visionClose">CLOSE VISION</button>
+            </div>
+            <div class="vision-grid" id="visionGrid">
+                <!-- Vision cards will be dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Feed Panel -->
+        <div class="feed-panel">
+            <div class="feed-categories">
+                <div class="feed-cat active" data-cat="all">ALL<span class="cat-count" id="countAll">0</span></div>
+                <div class="feed-cat" data-cat="chat">CHAT<span class="cat-count" id="countChat">0</span></div>
+                <div class="feed-cat" data-cat="thought">THOUGHTS<span class="cat-count" id="countThought">0</span></div>
+                <div class="feed-cat" data-cat="emotion">EMOTIONS<span class="cat-count" id="countEmotion">0</span></div>
+                <div class="feed-cat" data-cat="command">COMMANDS<span class="cat-count" id="countCommand">0</span></div>
+                <div class="feed-cat" data-cat="status">STATUS<span class="cat-count" id="countStatus">0</span></div>
+            </div>
+            <div class="feed-stream" id="feedStream">
+                <div class="feed-empty">
+                    <div class="feed-empty-icon">&#x1F9E0;</div>
+                    <span>Awaiting neural transmissions...</span>
+                </div>
+            </div>
+        </div>
+
+        <a href="/" class="back-link">&larr; MAIN</a>
+    </div>
+
+    <div class="scanlines"></div>
+    <div class="vignette"></div>
+
+    <script>
+        // ========== DATA STRUCTURES ==========
+        const leaders = new Map();
+        const workers = new Map();
+        const relationships = new Map(); // "botA-botB" -> { strength, trust, lastInteraction }
+        const feedItems = [];
+        const feedCounts = { all: 0, chat: 0, thought: 0, emotion: 0, command: 0, status: 0 };
+        const MAX_FEED = 150;
+
+        const emotionData = {
+            calm:       { color: '#00ffff', icon: '😌', bg: 'rgba(0,255,255,0.15)' },
+            happy:      { color: '#22c55e', icon: '😊', bg: 'rgba(34,197,94,0.15)' },
+            excited:    { color: '#fbbf24', icon: '🤩', bg: 'rgba(251,191,36,0.15)' },
+            curious:    { color: '#a855f7', icon: '🤔', bg: 'rgba(168,85,247,0.15)' },
+            focused:    { color: '#6366f1', icon: '🎯', bg: 'rgba(99,102,241,0.15)' },
+            annoyed:    { color: '#f97316', icon: '😤', bg: 'rgba(249,115,22,0.15)' },
+            frustrated: { color: '#f97316', icon: '😠', bg: 'rgba(249,115,22,0.15)' },
+            angry:      { color: '#ef4444', icon: '😡', bg: 'rgba(239,68,68,0.15)' },
+            sad:        { color: '#6366f1', icon: '😢', bg: 'rgba(99,102,241,0.15)' },
+            fearful:    { color: '#8b5cf6', icon: '😨', bg: 'rgba(139,92,246,0.15)' },
+            neutral:    { color: '#94a3b8', icon: '😐', bg: 'rgba(148,163,184,0.15)' }
+        };
+
+        // ========== CANVAS SETUP ==========
+        const canvas = document.getElementById('mindCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasArea = document.querySelector('.canvas-area');
+
+        let canvasW, canvasH;
+        let offsetX = 0, offsetY = 0;
+        let scale = 1;
+        let isDragging = false;
+        let dragStartX, dragStartY;
+        let showLabels = true;
+        let showWorkers = true;
+        let showRelationships = true;
+        let selectedBot = null;
+        let frame = 0;
+        let currentFilter = 'all';
+
+        function resizeCanvas() {
+            const rect = canvasArea.getBoundingClientRect();
+            canvasW = rect.width;
+            canvasH = rect.height;
+            canvas.width = canvasW * window.devicePixelRatio;
+            canvas.height = canvasH * window.devicePixelRatio;
+            canvas.style.width = canvasW + 'px';
+            canvas.style.height = canvasH + 'px';
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        // ========== RENDERING ==========
+        function render() {
+            frame++;
+            ctx.clearRect(0, 0, canvasW, canvasH);
+
+            ctx.save();
+            ctx.translate(canvasW / 2 + offsetX, canvasH / 2 + offsetY);
+            ctx.scale(scale, scale);
+
+            // Draw relationship lines
+            if (showRelationships) {
+                drawRelationships();
+            }
+
+            // Draw leader-worker connections
+            drawHierarchyConnections();
+
+            // Draw workers
+            if (showWorkers) {
+                workers.forEach((w, name) => drawWorkerNode(w, name));
+            }
+
+            // Draw leaders on top
+            leaders.forEach((l, name) => drawLeaderNode(l, name));
+
+            ctx.restore();
+            requestAnimationFrame(render);
+        }
+
+        function drawRelationships() {
+            relationships.forEach((rel, key) => {
+                const [nameA, nameB] = key.split('-');
+                const botA = leaders.get(nameA) || workers.get(nameA);
+                const botB = leaders.get(nameB) || workers.get(nameB);
+
+                if (botA && botB && botA.position && botB.position) {
+                    // Color based on trust level
+                    let color;
+                    if (rel.trust > 0.6) {
+                        color = 'rgba(34, 197, 94, ' + (0.2 + rel.strength * 0.4) + ')';
+                    } else if (rel.trust > 0.3) {
+                        color = 'rgba(234, 179, 8, ' + (0.2 + rel.strength * 0.4) + ')';
+                    } else {
+                        color = 'rgba(239, 68, 68, ' + (0.2 + rel.strength * 0.4) + ')';
+                    }
+
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 1 + rel.strength * 2;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(botA.position.x, botA.position.y);
+                    ctx.lineTo(botB.position.x, botB.position.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+        }
+
+        function drawHierarchyConnections() {
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+
+            leaders.forEach((leader, lName) => {
+                if (!leader.position) return;
+
+                // Leader to leader connections
+                leaders.forEach((other, oName) => {
+                    if (lName < oName && other.position) {
+                        ctx.strokeStyle = 'rgba(255, 217, 61, 0.25)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(leader.position.x, leader.position.y);
+                        ctx.lineTo(other.position.x, other.position.y);
+                        ctx.stroke();
+                    }
+                });
+
+                // Leader to workers
+                if (showWorkers) {
+                    ctx.strokeStyle = 'rgba(59, 130, 246, 0.08)';
+                    ctx.lineWidth = 1;
+                    leader.workers.forEach(wName => {
+                        const w = workers.get(wName);
+                        if (w && w.position) {
+                            ctx.beginPath();
+                            ctx.moveTo(leader.position.x, leader.position.y);
+                            ctx.lineTo(w.position.x, w.position.y);
+                            ctx.stroke();
+                        }
+                    });
+                }
+            });
+        }
+
+        function drawLeaderNode(leader, name) {
+            const x = leader.position?.x || 0;
+            const y = leader.position?.y || 0;
+            const emotion = emotionData[leader.emotion] || emotionData.calm;
+            const pulse = 35 + Math.sin(frame * 0.04) * 8;
+
+            // Outer aura
+            const aura = ctx.createRadialGradient(x, y, 0, x, y, 100);
+            aura.addColorStop(0, emotion.color + '30');
+            aura.addColorStop(0.5, emotion.color + '10');
+            aura.addColorStop(1, 'transparent');
+            ctx.fillStyle = aura;
+            ctx.beginPath();
+            ctx.arc(x, y, 100, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main orb
+            const grad = ctx.createRadialGradient(x - 10, y - 10, 0, x, y, pulse);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.3, emotion.color);
+            grad.addColorStop(0.7, emotion.color + 'cc');
+            grad.addColorStop(1, emotion.color + '40');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Gold ring for leader
+            ctx.strokeStyle = 'rgba(255, 217, 61, 0.6)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, pulse + 8, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Selection ring
+            if (selectedBot === name) {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(x, y, pulse + 18, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Emotion icon
+            ctx.font = '20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emotion.icon, x, y);
+
+            // Labels
+            if (showLabels) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 13px Oxanium';
+                ctx.textAlign = 'center';
+                ctx.fillText(name.toUpperCase(), x, y + pulse + 28);
+
+                ctx.fillStyle = 'rgba(255, 217, 61, 0.8)';
+                ctx.font = '10px JetBrains Mono';
+                ctx.fillText(`${leader.workers.length} workers`, x, y + pulse + 42);
+            }
+        }
+
+        function drawWorkerNode(worker, name) {
+            const x = worker.position?.x || 0;
+            const y = worker.position?.y || 0;
+
+            const statusColors = {
+                idle: '#3b82f6',
+                ready: '#00ffff',
+                executing: '#f59e0b',
+                completed: '#22c55e',
+                error: '#ef4444'
+            };
+            const color = statusColors[worker.status] || statusColors.idle;
+            const size = 7 + Math.sin(frame * 0.08 + x * 0.1) * 2;
+
+            // Glow
+            ctx.fillStyle = color + '30';
+            ctx.beginPath();
+            ctx.arc(x, y, size + 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Core
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Selection
+            if (selectedBot === name) {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, size + 10, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(name, x, y - size - 12);
+            }
+        }
+
+        // ========== LAYOUT ==========
+        function layoutBots() {
+            const count = leaders.size;
+            if (count === 0) return;
+
+            const radius = Math.min(canvasW, canvasH) * 0.28;
+            let i = 0;
+
+            leaders.forEach((leader, name) => {
+                const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+                leader.position = {
+                    x: Math.cos(angle) * radius,
+                    y: Math.sin(angle) * radius
+                };
+
+                // Workers orbit around leader
+                const wRadius = 90 + leader.workers.length * 2.5;
+                leader.workers.forEach((wName, wi) => {
+                    const w = workers.get(wName);
+                    if (w) {
+                        const wAngle = (wi / leader.workers.length) * Math.PI * 2;
+                        w.position = {
+                            x: leader.position.x + Math.cos(wAngle) * wRadius,
+                            y: leader.position.y + Math.sin(wAngle) * wRadius
+                        };
+                    }
+                });
+                i++;
+            });
+        }
+
+        // ========== INTERACTIONS ==========
+        canvas.addEventListener('mousedown', e => {
+            isDragging = true;
+            dragStartX = e.clientX - offsetX;
+            dragStartY = e.clientY - offsetY;
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (isDragging) {
+                offsetX = e.clientX - dragStartX;
+                offsetY = e.clientY - dragStartY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => isDragging = false);
+        canvas.addEventListener('mouseleave', () => isDragging = false);
+
+        canvas.addEventListener('click', e => {
+            if (isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left - canvasW / 2 - offsetX) / scale;
+            const my = (e.clientY - rect.top - canvasH / 2 - offsetY) / scale;
+
+            let clicked = null;
+
+            // Check leaders
+            leaders.forEach((l, name) => {
+                if (!l.position) return;
+                const dx = mx - l.position.x;
+                const dy = my - l.position.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 50) {
+                    clicked = { type: 'leader', name, data: l };
+                }
+            });
+
+            // Check workers
+            if (!clicked && showWorkers) {
+                workers.forEach((w, name) => {
+                    if (!w.position) return;
+                    const dx = mx - w.position.x;
+                    const dy = my - w.position.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                        clicked = { type: 'worker', name, data: w };
+                    }
+                });
+            }
+
+            if (clicked) {
+                selectedBot = clicked.name;
+                showBotDetail(clicked);
+            } else {
+                selectedBot = null;
+                hideBotDetail();
+            }
+        });
+
+        canvas.addEventListener('wheel', e => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            scale = Math.max(0.3, Math.min(3, scale * delta));
+        });
+
+        // Controls
+        document.getElementById('zoomIn').onclick = () => scale = Math.min(3, scale * 1.2);
+        document.getElementById('zoomOut').onclick = () => scale = Math.max(0.3, scale / 1.2);
+        document.getElementById('resetView').onclick = () => { scale = 1; offsetX = 0; offsetY = 0; };
+        document.getElementById('toggleLabels').onclick = function() {
+            showLabels = !showLabels;
+            this.classList.toggle('active', showLabels);
+        };
+        document.getElementById('toggleWorkers').onclick = function() {
+            showWorkers = !showWorkers;
+            this.classList.toggle('active', showWorkers);
+        };
+        document.getElementById('toggleRelationships').onclick = function() {
+            showRelationships = !showRelationships;
+            this.classList.toggle('active', showRelationships);
+        };
+
+        // ========== BOT DETAIL PANEL ==========
+        function showBotDetail(bot) {
+            const panel = document.getElementById('botDetailPanel');
+            const avatar = document.getElementById('detailAvatar');
+            const nameEl = document.getElementById('detailName');
+            const roleEl = document.getElementById('detailRole');
+            const body = document.getElementById('detailBody');
+
+            avatar.textContent = bot.name.charAt(0).toUpperCase();
+            avatar.className = 'detail-avatar ' + bot.type;
+            nameEl.textContent = bot.name;
+            roleEl.textContent = bot.type.toUpperCase();
+
+            if (bot.type === 'leader') {
+                const emotion = emotionData[bot.data.emotion] || emotionData.calm;
+                const emotionHistory = bot.data.emotionHistory || [];
+                const rels = getRelationshipsFor(bot.name);
+
+                body.innerHTML = `
+                    <div class="detail-section">
+                        <div class="section-header">EMOTIONAL STATE</div>
+                        <div class="emotion-display" style="background: ${emotion.bg}">
+                            <div class="emotion-icon" style="background: ${emotion.bg}; font-size: 32px;">${emotion.icon}</div>
+                            <div class="emotion-info">
+                                <div class="emotion-name" style="color: ${emotion.color}">${bot.data.emotion || 'calm'}</div>
+                                <div class="emotion-bar">
+                                    <div class="emotion-bar-fill" style="width: ${(bot.data.emotionIntensity || 0.5) * 100}%; background: ${emotion.color}"></div>
+                                </div>
+                            </div>
+                        </div>
+                        ${emotionHistory.length > 0 ? `
+                        <div style="margin-top: 10px;">
+                            <div class="emotion-history">
+                                ${emotionHistory.slice(-5).map(e => {
+                                    const ed = emotionData[e] || emotionData.neutral;
+                                    return `<div class="emotion-chip"><span class="emotion-chip-dot" style="background: ${ed.color}"></span>${e}</div>`;
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="section-header">RELATIONSHIPS</div>
+                        <div class="relationship-grid">
+                            ${rels.length > 0 ? rels.map(r => `
+                                <div class="relationship-item">
+                                    <div class="rel-avatar">${r.name.charAt(0)}</div>
+                                    <div class="rel-info">
+                                        <div class="rel-name">${r.name}</div>
+                                        <div class="rel-trust">
+                                            <div class="trust-bar">
+                                                <div class="trust-fill" style="width: ${r.trust * 100}%; background: ${r.trust > 0.6 ? '#22c55e' : r.trust > 0.3 ? '#eab308' : '#ef4444'}"></div>
+                                            </div>
+                                            <span class="trust-value">${Math.round(r.trust * 100)}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') : '<div style="color: var(--text-muted); font-size: 11px;">No relationships yet</div>'}
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <div class="section-header">ASSIGNED WORKERS (${bot.data.workers.length})</div>
+                        <div class="workers-grid">
+                            ${bot.data.workers.map(w => {
+                                const worker = workers.get(w);
+                                const statusClass = worker?.status === 'executing' ? 'executing' : worker?.status === 'error' ? 'error' : '';
+                                return `<span class="worker-tag ${statusClass}">${w}</span>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const rels = getRelationshipsFor(bot.name);
+                body.innerHTML = `
+                    <div class="detail-section">
+                        <div class="section-header">STATUS</div>
+                        <div style="display: grid; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface); border-radius: 6px;">
+                                <span style="color: var(--text-muted);">Leader</span>
+                                <span style="color: var(--gold);">${bot.data.leader}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface); border-radius: 6px;">
+                                <span style="color: var(--text-muted);">Status</span>
+                                <span>${bot.data.status || 'idle'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface); border-radius: 6px;">
+                                <span style="color: var(--text-muted);">Health</span>
+                                <span>${bot.data.health || 20}/20</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 12px; background: var(--surface); border-radius: 6px;">
+                                <span style="color: var(--text-muted);">Position</span>
+                                <span style="font-family: JetBrains Mono; font-size: 10px;">${bot.data.gamePosition ? `${Math.round(bot.data.gamePosition.x)}, ${Math.round(bot.data.gamePosition.y)}, ${Math.round(bot.data.gamePosition.z)}` : 'Unknown'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${rels.length > 0 ? `
+                    <div class="detail-section">
+                        <div class="section-header">RELATIONSHIPS</div>
+                        <div class="relationship-grid">
+                            ${rels.map(r => `
+                                <div class="relationship-item">
+                                    <div class="rel-avatar">${r.name.charAt(0)}</div>
+                                    <div class="rel-info">
+                                        <div class="rel-name">${r.name}</div>
+                                        <div class="rel-trust">
+                                            <div class="trust-bar">
+                                                <div class="trust-fill" style="width: ${r.trust * 100}%; background: ${r.trust > 0.6 ? '#22c55e' : r.trust > 0.3 ? '#eab308' : '#ef4444'}"></div>
+                                            </div>
+                                            <span class="trust-value">${Math.round(r.trust * 100)}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+                `;
+            }
+
+            panel.classList.add('visible');
+        }
+
+        function hideBotDetail() {
+            document.getElementById('botDetailPanel').classList.remove('visible');
+        }
+
+        document.getElementById('detailClose').onclick = hideBotDetail;
+
+        function getRelationshipsFor(name) {
+            const rels = [];
+            relationships.forEach((rel, key) => {
+                const [a, b] = key.split('-');
+                if (a === name) rels.push({ name: b, ...rel });
+                else if (b === name) rels.push({ name: a, ...rel });
+            });
+            return rels.sort((a, b) => b.trust - a.trust).slice(0, 5);
+        }
+
+        // ========== FEED SYSTEM ==========
+        function categorizeMessage(message, source) {
+            // Explicit source override
+            if (source === 'chat') return 'chat';
+            if (source === 'command') return 'command';
+            if (source === 'status') return 'status';
+            if (source === 'emotion') return 'emotion';
+
+            // Trim and normalize message
+            const msg = (message || '').trim();
+
+            // Detect commands FIRST (! prefix) - highest priority
+            if (msg.startsWith('!') || msg.match(/^!\w+/)) {
+                return 'command';
+            }
+
+            // Filter out debug/system messages - don't show these at all
+            if (msg.match(/\b(auto-prompt|self-prompt|prompting|Code output|Code execution|Action output)\b/i) ||
+                msg.match(/^Agent (did not|executed|wrote|hallucinated)/i) ||
+                msg.match(/\b(Stopping auto-prompting|starting self-prompt|Code finished)\b/i)) {
+                return 'debug'; // Will be filtered out
+            }
+
+            // Detect status updates (technical output)
+            if (msg.match(/\b(completed|finished|executing|started|stopped|collected|gathering|moving to|following|attacking)\b/i) &&
+                msg.match(/\b(worker|task|command|block|item|position)\b/i)) {
+                return 'status';
+            }
+
+            // Detect chat messages (bot-to-bot or player messages)
+            // Check for explicit chat markers
+            if (msg.match(/^\(To \w+\)/) ||
+                msg.includes('[CHAT]') ||
+                msg.match(/^\[.+\] .+:/) ||
+                msg.includes(' said ') ||
+                msg.includes(' says ') ||
+                msg.match(/^<\w+>/) ||
+                msg.includes(' whispers ')) {
+                return 'chat';
+            }
+
+            // Detect conversational patterns (these are CHAT, not thoughts)
+            // Greetings, thanks, questions, addressing by name
+            if (msg.match(/^(hi|hey|hello|thanks|thank you|okay|ok|sure|got it|sounds good|nice|great|alright|ready|understood)/i) ||
+                msg.match(/^(yes|no|yeah|nope|yep|nah)\b/i) ||
+                msg.match(/\?$/) ||  // Questions
+                msg.match(/^[A-Z][a-z]+,\s/) ||  // Starts with "Name, ..."
+                msg.match(/\b(please|let's|let me|I'll|I will|we should|we can)\b/i)) {
+                return 'chat';
+            }
+
+            // Detect emotion/mood mentions
+            if (msg.match(/\b(feeling|emotion|mood)\b/i) &&
+                msg.match(/\b(calm|angry|happy|sad|excited|frustrated|anxious|content)\b/i)) {
+                return 'emotion';
+            }
+
+            // Short conversational messages are likely chat (not detailed reasoning)
+            if (msg.length < 100 && !msg.includes('\n') &&
+                !msg.match(/\b(because|therefore|however|analysis|reasoning|plan|strategy)\b/i)) {
+                return 'chat';
+            }
+
+            // Default to thought (internal reasoning - longer analytical text)
+            return 'thought';
+        }
+
+        function addFeedItem(item) {
+            // Skip debug messages entirely
+            if (item.category === 'debug') {
+                return;
+            }
+
+            const stream = document.getElementById('feedStream');
+
+            // Clear empty state
+            if (feedItems.length === 0) {
+                stream.innerHTML = '';
+            }
+
+            // Normalize and validate category
+            const validCategories = ['chat', 'thought', 'emotion', 'command', 'status'];
+            let category = (item.category || 'thought').toLowerCase();
+            if (!validCategories.includes(category)) {
+                category = 'thought';
+            }
+            item.category = category;
+
+            const div = document.createElement('div');
+            const botClass = item.botType || (leaders.has(item.agent) ? 'leader' : 'worker');
+            div.className = `feed-item ${category} ${botClass}`;
+            div.dataset.category = category;
+
+            // Apply filter visibility
+            if (currentFilter !== 'all' && category !== currentFilter) {
+                div.style.display = 'none';
+            }
+
+            const time = new Date(item.timestamp || Date.now()).toLocaleTimeString('en-US', {
+                hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+
+            // Format content based on category
+            let contentHtml = item.content;
+            if (category === 'emotion' && item.oldEmotion && item.newEmotion) {
+                const oldE = emotionData[item.oldEmotion] || emotionData.neutral;
+                const newE = emotionData[item.newEmotion] || emotionData.neutral;
+                contentHtml = `
+                    <div class="item-content emotion-content">
+                        <div class="emotion-transition">
+                            <span class="emotion-state" style="background: ${oldE.bg}; color: ${oldE.color}">${oldE.icon} ${item.oldEmotion}</span>
+                            <span class="emotion-arrow">→</span>
+                            <span class="emotion-state" style="background: ${newE.bg}; color: ${newE.color}">${newE.icon} ${item.newEmotion}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (category === 'command' && item.target) {
+                contentHtml = `
+                    <div class="item-content">
+                        <span class="item-target">→ ${item.target}</span>
+                        <div class="item-command-text">${item.command}</div>
+                    </div>
+                `;
+            } else {
+                contentHtml = `<div class="item-content">${item.content}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="item-header">
+                    <span class="item-agent ${botClass}">${item.agent}</span>
+                    <span class="item-badge ${category}">${category}</span>
+                    <span class="item-time">${time}</span>
+                </div>
+                ${contentHtml}
+            `;
+
+            stream.insertBefore(div, stream.firstChild);
+            feedItems.unshift(item);
+
+            // Update counts - increment the specific category
+            feedCounts.all++;
+            if (feedCounts.hasOwnProperty(category)) {
+                feedCounts[category]++;
+            }
+            updateFeedCounts();
+
+            console.log('Added feed item:', category, 'Counts:', JSON.stringify(feedCounts));
+
+            // Trim old items
+            while (feedItems.length > MAX_FEED) {
+                const removed = feedItems.pop();
+                feedCounts.all--;
+                if (feedCounts.hasOwnProperty(removed.category)) {
+                    feedCounts[removed.category]--;
+                }
+                if (stream.lastChild) stream.removeChild(stream.lastChild);
+            }
+        }
+
+        function updateFeedCounts() {
+            document.getElementById('countAll').textContent = feedCounts.all;
+            document.getElementById('countChat').textContent = feedCounts.chat || 0;
+            document.getElementById('countThought').textContent = feedCounts.thought || 0;
+            document.getElementById('countEmotion').textContent = feedCounts.emotion || 0;
+            document.getElementById('countCommand').textContent = feedCounts.command || 0;
+            document.getElementById('countStatus').textContent = feedCounts.status || 0;
+        }
+
+        // Feed category tabs
+        document.querySelectorAll('.feed-cat').forEach(tab => {
+            tab.onclick = function() {
+                document.querySelectorAll('.feed-cat').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.cat;
+                console.log('Filter changed to:', currentFilter);
+                applyFeedFilter();
+            };
+        });
+
+        function applyFeedFilter() {
+            const items = document.querySelectorAll('.feed-item');
+            let shown = 0, hidden = 0;
+            items.forEach(item => {
+                const itemCat = item.dataset.category;
+                if (currentFilter === 'all') {
+                    item.style.display = '';
+                    shown++;
+                } else if (itemCat === currentFilter) {
+                    item.style.display = '';
+                    shown++;
+                } else {
+                    item.style.display = 'none';
+                    hidden++;
+                }
+            });
+            console.log('Filter applied:', currentFilter, 'Shown:', shown, 'Hidden:', hidden);
+        }
+
+        // ========== SOCKET CONNECTION ==========
+        const socket = io();
+
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').textContent = 'LINKED';
+            document.getElementById('statusDot').classList.remove('offline');
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            socket.emit('listen-to-agents');
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').textContent = 'OFFLINE';
+            document.getElementById('statusDot').classList.add('offline');
+        });
+
+        socket.on('agents-status', agents => {
+            let statusChanged = false;
+            agents.forEach(agent => {
+                if (agent.is_leader || !agent.name.startsWith('Worker_')) {
+                    const newStatus = agent.in_game ? 'active' : 'offline';
+                    if (!leaders.has(agent.name)) {
+                        leaders.set(agent.name, {
+                            position: null,
+                            workers: [],
+                            emotion: 'calm',
+                            emotionHistory: [],
+                            emotionIntensity: 0.5,
+                            status: newStatus
+                        });
+                        statusChanged = true;
+                    } else {
+                        const oldStatus = leaders.get(agent.name).status;
+                        leaders.get(agent.name).status = newStatus;
+                        if (oldStatus !== newStatus) statusChanged = true;
+                    }
+                }
+            });
+            updateCounts();
+            layoutBots();
+            // Refresh vision panel if a leader's status changed
+            if (statusChanged) refreshVisionIfActive();
+        });
+
+        socket.on('workers-status', workerList => {
+            workerList.forEach(w => {
+                if (!workers.has(w.name)) {
+                    workers.set(w.name, {
+                        position: null,
+                        leader: w.leader,
+                        status: w.status || 'idle',
+                        health: 20,
+                        gamePosition: null
+                    });
+                    const leader = leaders.get(w.leader);
+                    if (leader && !leader.workers.includes(w.name)) {
+                        leader.workers.push(w.name);
+                    }
+                } else {
+                    workers.get(w.name).status = w.status;
+                }
+            });
+            updateCounts();
+            layoutBots();
+        });
+
+        socket.on('hierarchy-status', hierarchy => {
+            hierarchy.leaders.forEach(l => {
+                if (leaders.has(l.name)) {
+                    leaders.get(l.name).workers = l.workers.map(w => w.name);
+                }
+            });
+            updateCounts();
+            layoutBots();
+        });
+
+        socket.on('worker-status-update', status => {
+            const worker = workers.get(status.worker);
+            if (worker) {
+                worker.status = status.status;
+                worker.health = status.health || worker.health;
+                worker.gamePosition = status.position || worker.gamePosition;
+            }
+
+            if (status.status === 'completed' || status.status === 'error') {
+                addFeedItem({
+                    agent: status.worker,
+                    botType: 'worker',
+                    category: 'status',
+                    content: status.message || `Task ${status.status}`,
+                    timestamp: status.timestamp
+                });
+            }
+        });
+
+        socket.on('soul-event', (agentName, event) => {
+            const leader = leaders.get(agentName);
+
+            if (leader && event.emotion) {
+                const oldEmotion = leader.emotion;
+                leader.emotion = event.emotion;
+                leader.emotionIntensity = event.intensity || 0.5;
+                leader.emotionHistory = leader.emotionHistory || [];
+                leader.emotionHistory.push(event.emotion);
+                if (leader.emotionHistory.length > 10) leader.emotionHistory.shift();
+
+                // Add emotion change to feed
+                if (oldEmotion !== event.emotion) {
+                    addFeedItem({
+                        agent: agentName,
+                        botType: 'leader',
+                        category: 'emotion',
+                        oldEmotion: oldEmotion,
+                        newEmotion: event.emotion,
+                        content: `Emotion changed from ${oldEmotion} to ${event.emotion}`,
+                        timestamp: event.timestamp
+                    });
+                }
+            }
+
+            // Add thought/decision to feed
+            if (event.thought || event.decision) {
+                addFeedItem({
+                    agent: agentName,
+                    botType: leader ? 'leader' : 'worker',
+                    category: event.type === 'emotion' ? 'emotion' : 'thought',
+                    content: event.thought || event.decision,
+                    timestamp: event.timestamp
+                });
+            }
+        });
+
+        socket.on('bot-output', (agentName, message) => {
+            // Trim whitespace for accurate categorization
+            const trimmedMessage = (message || '').trim();
+            const category = categorizeMessage(trimmedMessage, null);
+            const isLeader = leaders.has(agentName);
+
+            addFeedItem({
+                agent: agentName,
+                botType: isLeader ? 'leader' : 'worker',
+                category: category,
+                content: trimmedMessage,
+                timestamp: Date.now()
+            });
+        });
+
+        socket.on('command-sent', data => {
+            addFeedItem({
+                agent: data.leader,
+                botType: 'leader',
+                category: 'command',
+                target: data.worker,
+                command: data.command,
+                content: `→ ${data.worker}: ${data.command}`,
+                timestamp: data.timestamp
+            });
+        });
+
+        socket.on('group-command-sent', data => {
+            addFeedItem({
+                agent: data.leader,
+                botType: 'leader',
+                category: 'command',
+                target: `ALL (${data.workerCount})`,
+                command: data.command,
+                content: `→ ALL (${data.workerCount}): ${data.command}`,
+                timestamp: data.timestamp
+            });
+        });
+
+        // Relationship updates
+        socket.on('relationship-update', data => {
+            // Data comes as: { agent, target, trust, respect, familiarity, affection, type, interactionCount, timestamp }
+            const key = [data.agent, data.target].sort().join('-');
+            const familiarity = data.familiarity || 0.5;
+            const trust = data.trust || 0.5;
+            // Calculate strength from familiarity and trust
+            const strength = (familiarity + trust) / 2;
+
+            relationships.set(key, {
+                strength: strength,
+                trust: trust,
+                respect: data.respect || 0.5,
+                affection: data.affection || 0.5,
+                type: data.type || 'neutral',
+                interactionCount: data.interactionCount || 0,
+                lastInteraction: data.timestamp || Date.now()
+            });
+
+            // Log for debugging
+            console.log(`Relationship update: ${data.agent} <-> ${data.target} | Trust: ${trust.toFixed(2)}, Strength: ${strength.toFixed(2)}`);
+        });
+
+        function updateCounts() {
+            document.getElementById('leaderCount').textContent = leaders.size;
+            document.getElementById('workerCount').textContent = workers.size;
+            document.getElementById('totalCount').textContent = leaders.size + workers.size;
+        }
+
+        // ========== VISION PANEL ==========
+        const visionPanel = document.getElementById('visionPanel');
+        const visionGrid = document.getElementById('visionGrid');
+        const visionBtn = document.getElementById('toggleVision');
+        let visionActive = false;
+
+        // Leader viewer port mapping
+        const leaderViewerPorts = {
+            'Alpha': 3000,
+            'Beta': 3001,
+            'Gamma': 3002
+        };
+
+        visionBtn.onclick = function() {
+            visionActive = !visionActive;
+            this.classList.toggle('active', visionActive);
+            visionPanel.classList.toggle('active', visionActive);
+
+            if (visionActive) {
+                updateVisionGrid();
+            }
+        };
+
+        document.getElementById('visionClose').onclick = function() {
+            visionActive = false;
+            visionBtn.classList.remove('active');
+            visionPanel.classList.remove('active');
+        };
+
+        function updateVisionGrid() {
+            visionGrid.innerHTML = '';
+
+            // Create vision cards for each leader
+            leaders.forEach((leader, name) => {
+                const port = leaderViewerPorts[name] || (3000 + Array.from(leaders.keys()).indexOf(name));
+                const isOnline = leader.status === 'active';
+                const emotion = emotionData[leader.emotion] || emotionData.calm;
+
+                const card = document.createElement('div');
+                card.className = 'vision-card';
+                card.innerHTML = `
+                    <div class="vision-card-header">
+                        <div class="vision-card-name">
+                            <div class="vision-avatar">${name.charAt(0)}</div>
+                            <div class="vision-card-label">${name}</div>
+                        </div>
+                        <div class="vision-card-status">
+                            <span class="vision-status-dot ${isOnline ? '' : 'offline'}"></span>
+                            <span>${isOnline ? 'ONLINE' : 'OFFLINE'}</span>
+                        </div>
+                    </div>
+                    <div class="vision-card-body" id="vision-body-${name}">
+                        ${isOnline ? `
+                            <iframe
+                                class="vision-iframe"
+                                src="http://localhost:${port}"
+                                id="vision-iframe-${name}"
+                                sandbox="allow-scripts allow-same-origin"
+                                loading="lazy"
+                            ></iframe>
+                        ` : `
+                            <div class="vision-placeholder">
+                                <div class="vision-placeholder-icon">📡</div>
+                                <div class="vision-placeholder-text">
+                                    ${name} is offline.<br>Vision feed unavailable.
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+                visionGrid.appendChild(card);
+            });
+
+            // If no leaders yet, show a placeholder
+            if (leaders.size === 0) {
+                visionGrid.innerHTML = `
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--text-muted);">
+                        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.3;">🤖</div>
+                        <div style="font-size: 14px;">Waiting for leaders to connect...</div>
+                        <div style="font-size: 11px; margin-top: 8px; color: var(--text-muted);">
+                            Vision feeds will appear when leaders spawn in-game
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Refresh vision when leader status changes
+        function refreshVisionIfActive() {
+            if (visionActive) {
+                updateVisionGrid();
+            }
+        }
+
+        // Add reload functionality for individual viewers
+        visionGrid.addEventListener('click', function(e) {
+            if (e.target.classList.contains('vision-reload-btn')) {
+                const name = e.target.dataset.leader;
+                const iframe = document.getElementById(`vision-iframe-${name}`);
+                if (iframe) {
+                    iframe.src = iframe.src;
+                }
+            }
+        });
+
+        // ========== INIT ==========
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            layoutBots();
+        });
+
+        resizeCanvas();
+        render();
+    </script>
+</body>
+</html>
