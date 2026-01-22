@@ -1,0 +1,18 @@
+{
+    "name": "Worker_{{LEADER}}_{{ID}}",
+    "is_worker": true,
+    "leader_name": "{{LEADER}}",
+    "modes": {
+        "self_preservation": true,
+        "unstuck": true,
+        "cowardice": false,
+        "self_defense": true,
+        "hunting": true,
+        "item_collecting": true,
+        "torch_placing": true,
+        "elbow_room": false,
+        "idle_staring": false,
+        "cheat": false
+    },
+    "skin": null
+}
