@@ -1,0 +1,34 @@
+{
+    "name": "mining_outpost",
+    "offset": 0,
+    "blocks": [
+        [
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["cobblestone", "furnace", "furnace", "chest", "cobblestone"],
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["cobblestone", "crafting_table", "air", "chest", "cobblestone"],
+            ["cobblestone", "air", "door", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["cobblestone", "air", "torch", "air", "cobblestone"],
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["cobblestone", "air", "door", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"]
+        ]
+    ]
+}

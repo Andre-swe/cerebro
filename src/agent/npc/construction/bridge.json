@@ -1,0 +1,42 @@
+{
+    "name": "bridge",
+    "offset": 0,
+    "blocks": [
+        [
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone"]
+        ],
+        [
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"],
+            ["oak_fence", "air", "oak_fence"]
+        ],
+        [
+            ["torch", "air", "torch"],
+            ["air", "air", "air"],
+            ["air", "air", "air"],
+            ["air", "air", "air"],
+            ["torch", "air", "torch"],
+            ["air", "air", "air"],
+            ["air", "air", "air"],
+            ["air", "air", "air"],
+            ["air", "air", "air"],
+            ["torch", "air", "torch"]
+        ]
+    ]
+}

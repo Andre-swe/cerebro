@@ -1,0 +1,33 @@
+{
+    "name": "farm",
+    "offset": -1,
+    "blocks": [
+        [
+            ["grass_block", "grass_block", "grass_block", "grass_block", "grass_block", "grass_block", "grass_block"],
+            ["grass_block", "farmland", "farmland", "farmland", "farmland", "farmland", "grass_block"],
+            ["grass_block", "farmland", "farmland", "farmland", "farmland", "farmland", "grass_block"],
+            ["grass_block", "farmland", "farmland", "water", "farmland", "farmland", "grass_block"],
+            ["grass_block", "farmland", "farmland", "farmland", "farmland", "farmland", "grass_block"],
+            ["grass_block", "farmland", "farmland", "farmland", "farmland", "farmland", "grass_block"],
+            ["grass_block", "grass_block", "grass_block", "grass_block", "grass_block", "grass_block", "grass_block"]
+        ],
+        [
+            ["oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence"],
+            ["oak_fence", "wheat", "wheat", "wheat", "wheat", "wheat", "oak_fence"],
+            ["oak_fence", "wheat", "wheat", "wheat", "wheat", "wheat", "oak_fence"],
+            ["oak_fence", "wheat", "wheat", "air", "wheat", "wheat", "oak_fence"],
+            ["oak_fence", "wheat", "wheat", "wheat", "wheat", "wheat", "oak_fence"],
+            ["oak_fence", "wheat", "wheat", "wheat", "wheat", "wheat", "oak_fence"],
+            ["oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence"]
+        ],
+        [
+            ["torch", "air", "air", "air", "air", "air", "torch"],
+            ["air", "air", "air", "air", "air", "air", "air"],
+            ["air", "air", "air", "air", "air", "air", "air"],
+            ["air", "air", "air", "air", "air", "air", "air"],
+            ["air", "air", "air", "air", "air", "air", "air"],
+            ["air", "air", "air", "air", "air", "air", "air"],
+            ["torch", "air", "air", "air", "air", "air", "torch"]
+        ]
+    ]
+}

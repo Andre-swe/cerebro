@@ -515,9 +515,329 @@ function formatPlan(targetItem, { required, steps, leftovers }) {
 
     if (Object.keys(leftovers).length > 0) {
         lines.push('\nYou will have leftover:');
-        Object.entries(leftovers).forEach(([item, count]) => 
+        Object.entries(leftovers).forEach(([item, count]) =>
             lines.push(`- ${count} ${item}`));
     }
+
+    return lines.join('\n');
+}
+
+// ========== TOOL TIER & PROGRESSION SYSTEM ==========
+
+/**
+ * Tool material tiers from weakest to strongest
+ * Each tier unlocks mining capabilities for the next tier's materials
+ */
+export const TOOL_TIERS = {
+    hand: { level: 0, name: 'Hand' },
+    wooden: { level: 1, name: 'Wooden' },
+    stone: { level: 2, name: 'Stone' },
+    iron: { level: 3, name: 'Iron' },
+    diamond: { level: 4, name: 'Diamond' },
+    netherite: { level: 5, name: 'Netherite' }
+};
+
+/**
+ * Blocks and their required mining level
+ * Level 0 = hand, 1 = wood, 2 = stone, 3 = iron, 4 = diamond
+ */
+export const MINING_LEVELS = {
+    // Level 0 - Hand mineable
+    'dirt': 0, 'grass_block': 0, 'sand': 0, 'gravel': 0, 'clay': 0,
+    'soul_sand': 0, 'soul_soil': 0, 'netherrack': 0,
+
+    // Level 1 - Wood pickaxe
+    'stone': 1, 'cobblestone': 1, 'coal_ore': 1, 'deepslate_coal_ore': 1,
+    'copper_ore': 1, 'deepslate_copper_ore': 1, 'nether_quartz_ore': 1,
+
+    // Level 2 - Stone pickaxe
+    'iron_ore': 2, 'deepslate_iron_ore': 2, 'raw_iron_block': 2,
+    'lapis_ore': 2, 'deepslate_lapis_ore': 2,
+
+    // Level 3 - Iron pickaxe
+    'gold_ore': 3, 'deepslate_gold_ore': 3, 'nether_gold_ore': 3,
+    'diamond_ore': 3, 'deepslate_diamond_ore': 3,
+    'redstone_ore': 3, 'deepslate_redstone_ore': 3,
+    'emerald_ore': 3, 'deepslate_emerald_ore': 3,
+
+    // Level 4 - Diamond pickaxe
+    'obsidian': 4, 'crying_obsidian': 4, 'respawn_anchor': 4,
+    'ancient_debris': 4
+};
+
+/**
+ * Get the mining level required for a block
+ */
+export function getMiningLevel(blockName) {
+    return MINING_LEVELS[blockName] ?? 0;
+}
+
+/**
+ * Get tool tier from item name
+ */
+export function getToolTier(itemName) {
+    if (!itemName) return TOOL_TIERS.hand;
+    const name = itemName.toLowerCase();
+    if (name.includes('netherite')) return TOOL_TIERS.netherite;
+    if (name.includes('diamond')) return TOOL_TIERS.diamond;
+    if (name.includes('iron')) return TOOL_TIERS.iron;
+    if (name.includes('stone')) return TOOL_TIERS.stone;
+    if (name.includes('wooden') || name.includes('wood')) return TOOL_TIERS.wooden;
+    return TOOL_TIERS.hand;
+}
+
+/**
+ * Check if a tool can mine a specific block
+ */
+export function canMineBlock(toolName, blockName) {
+    const toolTier = getToolTier(toolName);
+    const requiredLevel = getMiningLevel(blockName);
+    return toolTier.level >= requiredLevel;
+}
+
+/**
+ * Get the minimum tool needed to mine a block
+ */
+export function getMinimumToolForBlock(blockName) {
+    const level = getMiningLevel(blockName);
+    for (const [tierName, tier] of Object.entries(TOOL_TIERS)) {
+        if (tier.level === level) {
+            return tierName === 'hand' ? null : `${tierName}_pickaxe`;
+        }
+    }
+    return null;
+}
+
+// ========== MINECRAFT PROGRESSION STAGES ==========
+
+export const PROGRESSION_STAGES = [
+    {
+        id: 'start',
+        name: 'Fresh Start',
+        description: 'Just spawned, need basic tools',
+        goals: ['Get wood', 'Craft crafting table', 'Craft wooden pickaxe'],
+        requiredItems: [],
+        unlocksItems: ['crafting_table', 'wooden_pickaxe', 'wooden_axe', 'wooden_sword']
+    },
+    {
+        id: 'stone_age',
+        name: 'Stone Age',
+        description: 'Upgrade to stone tools',
+        goals: ['Mine cobblestone', 'Craft stone pickaxe', 'Craft stone sword', 'Build basic shelter'],
+        requiredItems: ['wooden_pickaxe'],
+        unlocksItems: ['stone_pickaxe', 'stone_axe', 'stone_sword', 'furnace']
+    },
+    {
+        id: 'iron_age',
+        name: 'Iron Age',
+        description: 'Find and smelt iron for better tools',
+        goals: ['Find iron ore', 'Smelt iron ingots', 'Craft iron pickaxe', 'Craft iron armor'],
+        requiredItems: ['stone_pickaxe', 'furnace'],
+        unlocksItems: ['iron_pickaxe', 'iron_sword', 'iron_helmet', 'iron_chestplate', 'bucket', 'shield']
+    },
+    {
+        id: 'diamond_age',
+        name: 'Diamond Age',
+        description: 'Mine diamonds for top-tier overworld gear',
+        goals: ['Mine at Y=-59 to Y=16', 'Find diamonds', 'Craft diamond pickaxe', 'Craft diamond armor'],
+        requiredItems: ['iron_pickaxe'],
+        unlocksItems: ['diamond_pickaxe', 'diamond_sword', 'diamond_helmet', 'diamond_chestplate', 'enchanting_table']
+    },
+    {
+        id: 'nether',
+        name: 'Nether Expedition',
+        description: 'Build portal and explore the Nether',
+        goals: ['Collect obsidian (10 blocks)', 'Build nether portal', 'Find fortress', 'Get blaze rods', 'Get nether wart'],
+        requiredItems: ['diamond_pickaxe', 'bucket'],
+        unlocksItems: ['blaze_rod', 'nether_wart', 'ender_pearl']
+    },
+    {
+        id: 'brewing',
+        name: 'Potion Brewing',
+        description: 'Create potions for buffs',
+        goals: ['Craft brewing stand', 'Brew potions of strength', 'Brew potions of speed'],
+        requiredItems: ['blaze_rod', 'nether_wart'],
+        unlocksItems: ['brewing_stand', 'potion']
+    },
+    {
+        id: 'end_prep',
+        name: 'End Preparation',
+        description: 'Prepare to fight the Ender Dragon',
+        goals: ['Collect ender pearls (12+)', 'Craft eyes of ender', 'Find stronghold', 'Activate end portal'],
+        requiredItems: ['blaze_rod', 'ender_pearl'],
+        unlocksItems: ['ender_eye']
+    },
+    {
+        id: 'end_game',
+        name: 'The End',
+        description: 'Defeat the Ender Dragon',
+        goals: ['Enter the End', 'Destroy end crystals', 'Kill Ender Dragon', 'Collect dragon egg'],
+        requiredItems: ['ender_eye', 'diamond_sword', 'diamond_armor'],
+        unlocksItems: ['dragon_egg', 'elytra']
+    }
+];
+
+/**
+ * Determine current progression stage based on inventory
+ */
+export function getCurrentProgressionStage(inventory) {
+    // inventory is an object like { 'diamond_pickaxe': 1, 'iron_ingot': 5, ... }
+    const hasItem = (item) => (inventory[item] || 0) > 0;
+    const hasAny = (items) => items.some(hasItem);
+
+    // Check from end-game backwards
+    if (hasItem('dragon_egg') || hasItem('elytra')) return 'end_game';
+    if (hasItem('ender_eye') && hasAny(['diamond_sword', 'diamond_axe'])) return 'end_prep';
+    if (hasItem('brewing_stand') || hasItem('blaze_powder')) return 'brewing';
+    if (hasItem('blaze_rod') || hasItem('nether_wart')) return 'nether';
+    if (hasAny(['diamond_pickaxe', 'diamond_sword', 'diamond_helmet'])) return 'diamond_age';
+    if (hasAny(['iron_pickaxe', 'iron_sword', 'iron_helmet', 'iron_ingot'])) return 'iron_age';
+    if (hasAny(['stone_pickaxe', 'stone_sword', 'cobblestone'])) return 'stone_age';
+    return 'start';
+}
+
+/**
+ * Get next progression stage and what's needed
+ */
+export function getNextProgressionStage(currentStageId) {
+    const stageIndex = PROGRESSION_STAGES.findIndex(s => s.id === currentStageId);
+    if (stageIndex === -1 || stageIndex >= PROGRESSION_STAGES.length - 1) {
+        return null;
+    }
+    return PROGRESSION_STAGES[stageIndex + 1];
+}
+
+/**
+ * Get detailed progression plan from current stage
+ */
+export function getProgressionPlan(inventory) {
+    const currentStageId = getCurrentProgressionStage(inventory);
+    const currentStage = PROGRESSION_STAGES.find(s => s.id === currentStageId);
+    const nextStage = getNextProgressionStage(currentStageId);
+
+    return {
+        current: currentStage,
+        next: nextStage,
+        allStages: PROGRESSION_STAGES
+    };
+}
+
+/**
+ * Format progression plan for display
+ */
+export function formatProgressionPlan(inventory) {
+    const plan = getProgressionPlan(inventory);
+    const lines = [];
+
+    lines.push(`=== CURRENT STAGE: ${plan.current.name} ===`);
+    lines.push(plan.current.description);
+    lines.push('');
+    lines.push('Current goals:');
+    plan.current.goals.forEach(g => lines.push(`  - ${g}`));
+
+    if (plan.next) {
+        lines.push('');
+        lines.push(`=== NEXT STAGE: ${plan.next.name} ===`);
+        lines.push(plan.next.description);
+        lines.push('');
+        lines.push('You will need:');
+        plan.next.requiredItems.forEach(item => lines.push(`  - ${item}`));
+        lines.push('');
+        lines.push('This unlocks:');
+        plan.next.unlocksItems.slice(0, 5).forEach(item => lines.push(`  - ${item}`));
+        if (plan.next.unlocksItems.length > 5) {
+            lines.push(`  - ...and ${plan.next.unlocksItems.length - 5} more`);
+        }
+    } else {
+        lines.push('');
+        lines.push('🎉 You have reached the end game!');
+    }
+
+    return lines.join('\n');
+}
+
+// ========== COLLABORATIVE TASK PLANNING ==========
+
+/**
+ * Task types for multi-bot collaboration
+ */
+export const COLLABORATIVE_TASKS = {
+    'resource_gathering': {
+        name: 'Resource Gathering',
+        description: 'Collect resources efficiently by splitting work',
+        roles: ['miner', 'lumberjack', 'farmer', 'hunter'],
+        scalable: true
+    },
+    'base_building': {
+        name: 'Base Building',
+        description: 'Construct a base with multiple bots',
+        roles: ['builder', 'material_gatherer', 'decorator'],
+        scalable: true
+    },
+    'nether_expedition': {
+        name: 'Nether Expedition',
+        description: 'Coordinate Nether exploration safely',
+        roles: ['portal_builder', 'scout', 'fighter', 'collector'],
+        scalable: false
+    },
+    'end_raid': {
+        name: 'End Dragon Fight',
+        description: 'Coordinate to defeat the Ender Dragon',
+        roles: ['crystal_destroyer', 'dragon_fighter', 'support'],
+        scalable: false
+    },
+    'trading_post': {
+        name: 'Villager Trading',
+        description: 'Set up and manage villager trading',
+        roles: ['breeder', 'trader', 'transporter'],
+        scalable: true
+    }
+};
+
+/**
+ * Generate a collaborative plan for multiple bots
+ */
+export function generateCollaborativePlan(taskType, botNames, currentInventories) {
+    const task = COLLABORATIVE_TASKS[taskType];
+    if (!task) return null;
+
+    const numBots = botNames.length;
+    const assignments = [];
+
+    // Assign roles based on number of bots
+    for (let i = 0; i < numBots; i++) {
+        const roleIndex = i % task.roles.length;
+        assignments.push({
+            bot: botNames[i],
+            role: task.roles[roleIndex],
+            priority: i < task.roles.length ? 'primary' : 'support'
+        });
+    }
+
+    return {
+        task: task.name,
+        description: task.description,
+        assignments: assignments,
+        coordination: `Bots should communicate progress and share resources. Use !startConversation to coordinate.`
+    };
+}
+
+/**
+ * Format collaborative plan for display
+ */
+export function formatCollaborativePlan(plan) {
+    if (!plan) return 'Unknown task type';
+
+    const lines = [];
+    lines.push(`=== COLLABORATIVE TASK: ${plan.task} ===`);
+    lines.push(plan.description);
+    lines.push('');
+    lines.push('Role Assignments:');
+    plan.assignments.forEach(a => {
+        lines.push(`  ${a.bot}: ${a.role} (${a.priority})`);
+    });
+    lines.push('');
+    lines.push('Coordination: ' + plan.coordination);
 
     return lines.join('\n');
 }

@@ -1,0 +1,62 @@
+{
+    "name": "watch_tower",
+    "offset": 0,
+    "blocks": [
+        [
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"],
+            ["cobblestone", "cobblestone", "cobblestone", "cobblestone", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["air", "air", "air", "air", "air"],
+            ["air", "air", "ladder", "air", "air"],
+            ["air", "air", "air", "air", "air"],
+            ["cobblestone", "air", "door", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["air", "air", "air", "air", "air"],
+            ["air", "air", "ladder", "air", "air"],
+            ["air", "air", "air", "air", "air"],
+            ["cobblestone", "air", "door", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["air", "air", "air", "air", "air"],
+            ["air", "air", "ladder", "air", "air"],
+            ["air", "air", "air", "air", "air"],
+            ["cobblestone", "air", "air", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["air", "air", "air", "air", "air"],
+            ["air", "air", "ladder", "air", "air"],
+            ["air", "air", "air", "air", "air"],
+            ["cobblestone", "air", "air", "air", "cobblestone"]
+        ],
+        [
+            ["cobblestone", "air", "air", "air", "cobblestone"],
+            ["air", "air", "air", "air", "air"],
+            ["air", "air", "ladder", "air", "air"],
+            ["air", "air", "air", "air", "air"],
+            ["cobblestone", "air", "air", "air", "cobblestone"]
+        ],
+        [
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"]
+        ],
+        [
+            ["oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence"],
+            ["oak_fence", "air", "air", "air", "oak_fence"],
+            ["oak_fence", "air", "torch", "air", "oak_fence"],
+            ["oak_fence", "air", "air", "air", "oak_fence"],
+            ["oak_fence", "oak_fence", "oak_fence", "oak_fence", "oak_fence"]
+        ]
+    ]
+}

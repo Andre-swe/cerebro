@@ -1,0 +1,76 @@
+{
+    "name": "wall_segment",
+    "offset": 0,
+    "blocks": [
+        [
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"]
+        ],
+        [
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"]
+        ],
+        [
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"]
+        ],
+        [
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"],
+            ["stone_bricks", "stone_bricks", "stone_bricks"]
+        ],
+        [
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"],
+            ["stone_brick_stairs", "stone_bricks", "stone_brick_stairs"]
+        ],
+        [
+            ["stone_bricks", "air", "stone_bricks"],
+            ["air", "air", "air"],
+            ["stone_bricks", "air", "stone_bricks"],
+            ["air", "air", "air"],
+            ["stone_bricks", "air", "stone_bricks"],
+            ["air", "air", "air"],
+            ["stone_bricks", "air", "stone_bricks"],
+            ["air", "air", "air"]
+        ],
+        [
+            ["torch", "air", "torch"],
+            ["air", "air", "air"],
+            ["torch", "air", "torch"],
+            ["air", "air", "air"],
+            ["torch", "air", "torch"],
+            ["air", "air", "air"],
+            ["torch", "air", "torch"],
+            ["air", "air", "air"]
+        ]
+    ]
+}

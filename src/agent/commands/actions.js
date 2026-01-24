@@ -731,4 +731,343 @@ export const actionsList = [
             }
         }
     },
+
+    // ========== BUILDING COMMANDS ==========
+    {
+        name: '!listBlueprints',
+        description: 'List all available building blueprints that can be built with !buildBlueprint.',
+        perform: async function (agent) {
+            const blueprints = Object.keys(agent.npc.constructions);
+            if (blueprints.length === 0) {
+                return "No blueprints available.";
+            }
+            return `Available blueprints: ${blueprints.join(', ')}. Use !buildBlueprint(name) to build one.`;
+        }
+    },
+    {
+        name: '!buildBlueprint',
+        description: 'Build a structure from a predefined blueprint. Use !listBlueprints to see available options.',
+        params: {
+            'name': { type: 'string', description: 'The name of the blueprint to build (e.g., "small_wood_house", "dirt_shelter").' }
+        },
+        perform: runAsAction(async (agent, name) => {
+            const blueprint = agent.npc.constructions[name];
+            if (!blueprint) {
+                const available = Object.keys(agent.npc.constructions).join(', ');
+                skills.log(agent.bot, `Blueprint "${name}" not found. Available: ${available}`);
+                return;
+            }
+
+            skills.log(agent.bot, `Building ${name}...`);
+
+            // Find position and build
+            let result = await agent.npc.build_goal.executeNext(blueprint);
+
+            while (result.acted) {
+                // Check for missing materials
+                const missingItems = Object.entries(result.missing);
+                if (missingItems.length > 0) {
+                    const missingStr = missingItems.map(([item, count]) => `${count} ${item}`).join(', ');
+                    skills.log(agent.bot, `Missing materials: ${missingStr}. Trying to continue...`);
+                }
+                result = await agent.npc.build_goal.executeNext(blueprint, result.position, result.orientation);
+            }
+
+            const missingItems = Object.entries(result.missing);
+            if (missingItems.length > 0) {
+                const missingStr = missingItems.map(([item, count]) => `${count} ${item}`).join(', ');
+                skills.log(agent.bot, `Build incomplete. Still missing: ${missingStr}`);
+            } else {
+                skills.log(agent.bot, `Finished building ${name}!`);
+            }
+        }, true, 600)
+    },
+    {
+        name: '!buildWall',
+        description: 'Build a line/wall of blocks from point A to point B. Useful for walls, floors, and beams.',
+        params: {
+            'block': { type: 'BlockName', description: 'The block type to use (e.g., "cobblestone", "oak_planks").' },
+            'x1': { type: 'int', description: 'Starting X coordinate.', domain: [-Infinity, Infinity] },
+            'y1': { type: 'int', description: 'Starting Y coordinate.', domain: [-64, 320] },
+            'z1': { type: 'int', description: 'Starting Z coordinate.', domain: [-Infinity, Infinity] },
+            'x2': { type: 'int', description: 'Ending X coordinate.', domain: [-Infinity, Infinity] },
+            'y2': { type: 'int', description: 'Ending Y coordinate.', domain: [-64, 320] },
+            'z2': { type: 'int', description: 'Ending Z coordinate.', domain: [-Infinity, Infinity] }
+        },
+        perform: runAsAction(async (agent, block, x1, y1, z1, x2, y2, z2) => {
+            const dx = Math.sign(x2 - x1);
+            const dy = Math.sign(y2 - y1);
+            const dz = Math.sign(z2 - z1);
+            const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1), Math.abs(z2 - z1)) + 1;
+
+            let placed = 0;
+            let x = x1, y = y1, z = z1;
+
+            for (let i = 0; i < steps; i++) {
+                const success = await skills.placeBlock(agent.bot, block, x, y, z);
+                if (success) placed++;
+
+                if (x !== x2) x += dx;
+                if (y !== y2) y += dy;
+                if (z !== z2) z += dz;
+            }
+
+            skills.log(agent.bot, `Placed ${placed}/${steps} ${block} blocks in a line.`);
+        }, false, 300)
+    },
+    {
+        name: '!buildBox',
+        description: 'Build a box/room of blocks. Can be solid or hollow (just walls).',
+        params: {
+            'block': { type: 'BlockName', description: 'The block type to use.' },
+            'x1': { type: 'int', description: 'First corner X.', domain: [-Infinity, Infinity] },
+            'y1': { type: 'int', description: 'First corner Y.', domain: [-64, 320] },
+            'z1': { type: 'int', description: 'First corner Z.', domain: [-Infinity, Infinity] },
+            'x2': { type: 'int', description: 'Opposite corner X.', domain: [-Infinity, Infinity] },
+            'y2': { type: 'int', description: 'Opposite corner Y.', domain: [-64, 320] },
+            'z2': { type: 'int', description: 'Opposite corner Z.', domain: [-Infinity, Infinity] },
+            'hollow': { type: 'boolean', description: 'If true, only builds the outer walls (hollow). If false, fills the entire volume.' }
+        },
+        perform: runAsAction(async (agent, block, x1, y1, z1, x2, y2, z2, hollow) => {
+            const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+            const minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+
+            let placed = 0;
+            let total = 0;
+
+            for (let y = minY; y <= maxY; y++) {
+                for (let x = minX; x <= maxX; x++) {
+                    for (let z = minZ; z <= maxZ; z++) {
+                        // If hollow, skip interior blocks
+                        if (hollow) {
+                            const isInterior = x > minX && x < maxX &&
+                                             y > minY && y < maxY &&
+                                             z > minZ && z < maxZ;
+                            if (isInterior) continue;
+                        }
+
+                        total++;
+                        const success = await skills.placeBlock(agent.bot, block, x, y, z);
+                        if (success) placed++;
+                    }
+                }
+            }
+
+            const boxType = hollow ? 'hollow box' : 'solid box';
+            skills.log(agent.bot, `Built ${boxType}: placed ${placed}/${total} ${block} blocks.`);
+        }, false, 600)
+    },
+    {
+        name: '!buildFloor',
+        description: 'Build a flat floor/platform at the specified Y level.',
+        params: {
+            'block': { type: 'BlockName', description: 'The block type to use.' },
+            'x1': { type: 'int', description: 'First corner X.', domain: [-Infinity, Infinity] },
+            'z1': { type: 'int', description: 'First corner Z.', domain: [-Infinity, Infinity] },
+            'x2': { type: 'int', description: 'Opposite corner X.', domain: [-Infinity, Infinity] },
+            'z2': { type: 'int', description: 'Opposite corner Z.', domain: [-Infinity, Infinity] },
+            'y': { type: 'int', description: 'The Y level to build the floor at.', domain: [-64, 320] }
+        },
+        perform: runAsAction(async (agent, block, x1, z1, x2, z2, y) => {
+            const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+            const minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+
+            let placed = 0;
+            let total = 0;
+
+            for (let x = minX; x <= maxX; x++) {
+                for (let z = minZ; z <= maxZ; z++) {
+                    total++;
+                    const success = await skills.placeBlock(agent.bot, block, x, y, z);
+                    if (success) placed++;
+                }
+            }
+
+            skills.log(agent.bot, `Built floor: placed ${placed}/${total} ${block} blocks.`);
+        }, false, 300)
+    },
+
+    // ========== COLLABORATIVE PLANNING COMMANDS ==========
+    {
+        name: '!proposeGoal',
+        description: 'Propose a group goal to all nearby bots and coordinate working together.',
+        params: {
+            'goal': { type: 'string', description: 'The goal to propose (e.g., "get diamonds", "build a base", "go to nether")' }
+        },
+        perform: async function (agent, goal) {
+            const allBots = convoManager.getInGameAgents().filter(b => b !== agent.name);
+
+            if (allBots.length === 0) {
+                return "No other bots online to coordinate with.";
+            }
+
+            // Store the proposed goal in agent memory
+            agent.memory_bank.rememberPlace(`group_goal`, 0, 0, 0);  // Marker that a goal exists
+
+            // Send proposal to all bots
+            const message = `I'm proposing a group goal: "${goal}". Who wants to help? Reply with what role you can take!`;
+
+            for (const botName of allBots) {
+                await convoManager.startConversation(agent.name, botName, message);
+            }
+
+            return `Proposed goal "${goal}" to ${allBots.length} bot(s): ${allBots.join(', ')}. Waiting for responses...`;
+        }
+    },
+    {
+        name: '!acceptRole',
+        description: 'Accept a role in a collaborative task that another bot proposed.',
+        params: {
+            'role': { type: 'string', description: 'The role you are accepting (e.g., "miner", "builder", "gatherer")' },
+            'leader': { type: 'string', description: 'The name of the bot who proposed the goal' }
+        },
+        perform: async function (agent, role, leader) {
+            // Store role assignment
+            agent.memory_bank.rememberPlace(`my_role_${role}`, 0, 0, 0);
+
+            // Notify the leader
+            const message = `I'll take the ${role} role! Ready to start when you give the signal.`;
+
+            if (convoManager.getInGameAgents().includes(leader)) {
+                await convoManager.startConversation(agent.name, leader, message);
+                return `Accepted role: ${role}. Notified ${leader}.`;
+            } else {
+                return `Accepted role: ${role}, but couldn't find ${leader} online.`;
+            }
+        }
+    },
+    {
+        name: '!shareProgress',
+        description: 'Share your current progress/status with all team members.',
+        params: {
+            'status': { type: 'string', description: 'Your current status or progress update' }
+        },
+        perform: async function (agent, status) {
+            const allBots = convoManager.getInGameAgents().filter(b => b !== agent.name);
+
+            if (allBots.length === 0) {
+                return "No other bots to share with.";
+            }
+
+            const message = `[Progress Update] ${status}`;
+
+            for (const botName of allBots) {
+                // Only send to bots we're already in conversation with, or start new ones
+                await convoManager.startConversation(agent.name, botName, message);
+            }
+
+            return `Shared progress with ${allBots.length} bot(s).`;
+        }
+    },
+    {
+        name: '!requestHelp',
+        description: 'Request help from other bots with a specific task.',
+        params: {
+            'task': { type: 'string', description: 'What you need help with' },
+            'location': { type: 'string', description: 'Where you need help (or "here" for current location)' }
+        },
+        perform: async function (agent, task, location) {
+            const allBots = convoManager.getInGameAgents().filter(b => b !== agent.name);
+
+            if (allBots.length === 0) {
+                return "No other bots available to help.";
+            }
+
+            let locationStr = location;
+            if (location.toLowerCase() === 'here') {
+                const pos = agent.bot.entity.position;
+                locationStr = `x:${Math.floor(pos.x)}, y:${Math.floor(pos.y)}, z:${Math.floor(pos.z)}`;
+            }
+
+            const message = `[HELP NEEDED] I need help with: ${task}. Location: ${locationStr}. Can anyone assist?`;
+
+            for (const botName of allBots) {
+                await convoManager.startConversation(agent.name, botName, message);
+            }
+
+            return `Requested help from ${allBots.length} bot(s) for: ${task}`;
+        }
+    },
+    {
+        name: '!shareLocation',
+        description: 'Share a named location with all team members.',
+        params: {
+            'name': { type: 'string', description: 'Name for the location (e.g., "base", "mine", "portal")' }
+        },
+        perform: async function (agent, name) {
+            const pos = agent.bot.entity.position;
+            const allBots = convoManager.getInGameAgents().filter(b => b !== agent.name);
+
+            if (allBots.length === 0) {
+                return "No other bots to share with.";
+            }
+
+            const coords = `x:${Math.floor(pos.x)}, y:${Math.floor(pos.y)}, z:${Math.floor(pos.z)}`;
+            const message = `[LOCATION SHARE] "${name}" is at ${coords}. Save it with !rememberHere("${name}") when you arrive!`;
+
+            for (const botName of allBots) {
+                await convoManager.startConversation(agent.name, botName, message);
+            }
+
+            // Also save for self
+            agent.memory_bank.rememberPlace(name, pos.x, pos.y, pos.z);
+
+            return `Shared location "${name}" (${coords}) with ${allBots.length} bot(s).`;
+        }
+    },
+    {
+        name: '!divideArea',
+        description: 'Divide a rectangular area among all online bots for parallel work.',
+        params: {
+            'x1': { type: 'int', description: 'First corner X', domain: [-Infinity, Infinity] },
+            'z1': { type: 'int', description: 'First corner Z', domain: [-Infinity, Infinity] },
+            'x2': { type: 'int', description: 'Second corner X', domain: [-Infinity, Infinity] },
+            'z2': { type: 'int', description: 'Second corner Z', domain: [-Infinity, Infinity] }
+        },
+        perform: async function (agent, x1, z1, x2, z2) {
+            const allBots = convoManager.getInGameAgents();
+            const numBots = allBots.length;
+
+            if (numBots < 2) {
+                return "Need at least 2 bots to divide area.";
+            }
+
+            const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+            const minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+
+            const width = maxX - minX;
+            const sections = [];
+
+            // Divide along X axis
+            const sectionWidth = Math.ceil(width / numBots);
+
+            for (let i = 0; i < numBots; i++) {
+                const sectionX1 = minX + (i * sectionWidth);
+                const sectionX2 = Math.min(sectionX1 + sectionWidth, maxX);
+
+                sections.push({
+                    bot: allBots[i],
+                    x1: sectionX1,
+                    z1: minZ,
+                    x2: sectionX2,
+                    z2: maxZ
+                });
+            }
+
+            // Notify each bot of their section
+            let result = 'Area divided:\n';
+            for (const section of sections) {
+                const sectionStr = `x:${section.x1}-${section.x2}, z:${section.z1}-${section.z2}`;
+                result += `  ${section.bot}: ${sectionStr}\n`;
+
+                if (section.bot !== agent.name) {
+                    const message = `[AREA ASSIGNMENT] Your section to work on: x:${section.x1} to ${section.x2}, z:${section.z1} to ${section.z2}`;
+                    await convoManager.startConversation(agent.name, section.bot, message);
+                }
+            }
+
+            return result;
+        }
+    },
 ];

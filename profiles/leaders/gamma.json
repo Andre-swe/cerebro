@@ -2,6 +2,7 @@
     "name": "Gamma",
     "model": "gpt-4o",
     "is_leader": true,
+    "allow_vision": true,
     "personality": {
         "chattiness": 0.05,
         "responseDelay": {

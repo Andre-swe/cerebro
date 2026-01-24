@@ -344,4 +344,189 @@ export const queryList = [
             return getCommandDocs(agent);
         }
     },
+
+    // ========== PROGRESSION & COLLABORATION QUERIES ==========
+    {
+        name: '!progressionStatus',
+        description: 'Check your current Minecraft progression stage and what to do next.',
+        perform: function (agent) {
+            const inventory = world.getInventoryCounts(agent.bot);
+            return mc.formatProgressionPlan(inventory);
+        }
+    },
+    {
+        name: '!canMine',
+        description: 'Check if you can mine a specific block with your current tools.',
+        params: {
+            'block': { type: 'BlockName', description: 'The block to check.' }
+        },
+        perform: function (agent, blockName) {
+            const inventory = world.getInventoryCounts(agent.bot);
+            const pickaxes = ['netherite_pickaxe', 'diamond_pickaxe', 'iron_pickaxe', 'stone_pickaxe', 'wooden_pickaxe'];
+            let bestPickaxe = null;
+
+            for (const pick of pickaxes) {
+                if (inventory[pick] > 0) {
+                    bestPickaxe = pick;
+                    break;
+                }
+            }
+
+            const requiredLevel = mc.getMiningLevel(blockName);
+            const minTool = mc.getMinimumToolForBlock(blockName);
+
+            if (requiredLevel === 0) {
+                return `${blockName} can be mined by hand or any tool.`;
+            }
+
+            const canMine = bestPickaxe ? mc.canMineBlock(bestPickaxe, blockName) : false;
+
+            if (canMine) {
+                return `Yes! You can mine ${blockName} with your ${bestPickaxe}.`;
+            } else {
+                const neededTool = minTool || 'a better pickaxe';
+                return `No. ${blockName} requires at least ${neededTool}. Your best pickaxe: ${bestPickaxe || 'none'}.`;
+            }
+        }
+    },
+    {
+        name: '!toolTiers',
+        description: 'Show the tool tier progression and what each tier can mine.',
+        perform: function (agent) {
+            let res = 'TOOL TIER PROGRESSION\n';
+            res += '=====================\n\n';
+            res += '1. WOODEN PICKAXE (craft from planks + sticks)\n';
+            res += '   Can mine: Stone, Coal Ore, Copper Ore\n\n';
+            res += '2. STONE PICKAXE (craft from cobblestone + sticks)\n';
+            res += '   Can mine: Iron Ore, Lapis Ore\n\n';
+            res += '3. IRON PICKAXE (craft from iron ingots + sticks)\n';
+            res += '   Can mine: Gold Ore, Diamond Ore, Redstone Ore, Emerald Ore\n\n';
+            res += '4. DIAMOND PICKAXE (craft from diamonds + sticks)\n';
+            res += '   Can mine: Obsidian, Ancient Debris\n\n';
+            res += '5. NETHERITE PICKAXE (upgrade diamond with netherite)\n';
+            res += '   Best durability and speed\n\n';
+            res += 'TIP: Always upgrade your pickaxe before mining higher-tier ores!';
+            return res;
+        }
+    },
+    {
+        name: '!collaboratePlan',
+        description: 'Generate a collaborative plan for multiple bots to work together on a task.',
+        params: {
+            'task': { type: 'string', description: 'Task type: resource_gathering, base_building, nether_expedition, end_raid, or trading_post' }
+        },
+        perform: function (agent, taskType) {
+            // Get all online bots
+            const allBots = convoManager.getInGameAgents();
+            if (allBots.length < 2) {
+                return 'Collaborative planning requires at least 2 bots online. Currently: ' + allBots.join(', ');
+            }
+
+            const inventories = {};  // In a real implementation, we'd gather these
+            const plan = mc.generateCollaborativePlan(taskType, allBots, inventories);
+
+            if (!plan) {
+                const validTasks = Object.keys(mc.COLLABORATIVE_TASKS).join(', ');
+                return `Unknown task type "${taskType}". Valid tasks: ${validTasks}`;
+            }
+
+            return mc.formatCollaborativePlan(plan);
+        }
+    },
+    {
+        name: '!assignRoles',
+        description: 'Suggest role assignments for the current group of bots based on a goal.',
+        params: {
+            'goal': { type: 'string', description: 'The overall goal (e.g., "build a base", "get diamonds", "go to nether")' }
+        },
+        perform: function (agent, goal) {
+            const allBots = convoManager.getInGameAgents();
+            const goalLower = goal.toLowerCase();
+
+            let res = `ROLE ASSIGNMENTS FOR: "${goal}"\n`;
+            res += `================================\n`;
+            res += `Bots available: ${allBots.join(', ')}\n\n`;
+
+            // Suggest roles based on goal keywords
+            if (goalLower.includes('base') || goalLower.includes('house') || goalLower.includes('build')) {
+                res += 'Suggested roles:\n';
+                allBots.forEach((bot, i) => {
+                    if (i === 0) res += `  ${bot}: Lead Builder - coordinates structure placement\n`;
+                    else if (i === 1) res += `  ${bot}: Material Gatherer - collects wood, stone, etc.\n`;
+                    else if (i === 2) res += `  ${bot}: Interior Designer - places furniture, torches\n`;
+                    else res += `  ${bot}: Support - helps with any task needed\n`;
+                });
+            } else if (goalLower.includes('diamond') || goalLower.includes('mine') || goalLower.includes('ore')) {
+                res += 'Suggested roles:\n';
+                allBots.forEach((bot, i) => {
+                    if (i === 0) res += `  ${bot}: Lead Miner - mines at optimal Y level\n`;
+                    else if (i === 1) res += `  ${bot}: Torch Placer - lights up tunnels for safety\n`;
+                    else if (i === 2) res += `  ${bot}: Ore Collector - gathers dropped items\n`;
+                    else res += `  ${bot}: Support Miner - expands mining area\n`;
+                });
+            } else if (goalLower.includes('nether') || goalLower.includes('portal')) {
+                res += 'Suggested roles:\n';
+                allBots.forEach((bot, i) => {
+                    if (i === 0) res += `  ${bot}: Portal Builder - collects obsidian, builds frame\n`;
+                    else if (i === 1) res += `  ${bot}: Scout - explores for fortress\n`;
+                    else if (i === 2) res += `  ${bot}: Fighter - handles blazes and other mobs\n`;
+                    else res += `  ${bot}: Collector - gathers blaze rods, wart\n`;
+                });
+            } else if (goalLower.includes('farm') || goalLower.includes('food')) {
+                res += 'Suggested roles:\n';
+                allBots.forEach((bot, i) => {
+                    if (i === 0) res += `  ${bot}: Farmer - plants and harvests crops\n`;
+                    else if (i === 1) res += `  ${bot}: Animal Handler - breeds animals\n`;
+                    else if (i === 2) res += `  ${bot}: Cook - smelts food in furnaces\n`;
+                    else res += `  ${bot}: Fence Builder - secures the farm\n`;
+                });
+            } else {
+                res += 'General roles:\n';
+                allBots.forEach((bot, i) => {
+                    if (i === 0) res += `  ${bot}: Leader - coordinates and makes decisions\n`;
+                    else res += `  ${bot}: Team Member - follows leader's direction\n`;
+                });
+            }
+
+            res += '\nUse !startConversation to coordinate with other bots!';
+            return res;
+        }
+    },
+    {
+        name: '!teamStatus',
+        description: 'Check the status and inventory highlights of all online bots.',
+        perform: function (agent) {
+            const allBots = convoManager.getInGameAgents();
+            let res = 'TEAM STATUS\n';
+            res += '===========\n\n';
+
+            // For current bot
+            const myInventory = world.getInventoryCounts(agent.bot);
+            const myStage = mc.getCurrentProgressionStage(myInventory);
+            const myPos = agent.bot.entity.position;
+
+            res += `${agent.name} (you):\n`;
+            res += `  Position: ${Math.floor(myPos.x)}, ${Math.floor(myPos.y)}, ${Math.floor(myPos.z)}\n`;
+            res += `  Stage: ${myStage}\n`;
+            res += `  Key items: `;
+
+            const keyItems = ['diamond_pickaxe', 'iron_pickaxe', 'stone_pickaxe', 'diamond', 'iron_ingot', 'blaze_rod'];
+            const haveItems = keyItems.filter(item => myInventory[item] > 0);
+            res += haveItems.length > 0 ? haveItems.join(', ') : 'basic tools only';
+            res += '\n\n';
+
+            // List other bots
+            const otherBots = allBots.filter(b => b !== agent.name);
+            if (otherBots.length > 0) {
+                res += 'Other team members:\n';
+                otherBots.forEach(botName => {
+                    res += `  - ${botName} (use !startConversation to coordinate)\n`;
+                });
+            } else {
+                res += 'No other bots online.\n';
+            }
+
+            return res;
+        }
+    },
 ];

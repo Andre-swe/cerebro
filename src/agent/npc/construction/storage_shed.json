@@ -1,0 +1,36 @@
+{
+    "name": "storage_shed",
+    "offset": 0,
+    "blocks": [
+        [
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"],
+            ["oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_planks"]
+        ],
+        [
+            ["oak_log", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_log"],
+            ["oak_planks", "chest", "chest", "chest", "chest", "oak_planks"],
+            ["oak_planks", "chest", "air", "air", "chest", "oak_planks"],
+            ["oak_log", "oak_planks", "door", "door", "oak_planks", "oak_log"]
+        ],
+        [
+            ["oak_log", "oak_planks", "glass_pane", "glass_pane", "oak_planks", "oak_log"],
+            ["oak_planks", "chest", "chest", "chest", "chest", "oak_planks"],
+            ["oak_planks", "air", "air", "air", "air", "oak_planks"],
+            ["oak_log", "oak_planks", "air", "air", "oak_planks", "oak_log"]
+        ],
+        [
+            ["oak_log", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_log"],
+            ["oak_planks", "torch", "air", "air", "torch", "oak_planks"],
+            ["oak_planks", "air", "air", "air", "air", "oak_planks"],
+            ["oak_log", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_log"]
+        ],
+        [
+            ["air", "oak_stairs", "oak_stairs", "oak_stairs", "oak_stairs", "air"],
+            ["oak_stairs", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_stairs"],
+            ["oak_stairs", "oak_planks", "oak_planks", "oak_planks", "oak_planks", "oak_stairs"],
+            ["air", "oak_stairs", "oak_stairs", "oak_stairs", "oak_stairs", "air"]
+        ]
+    ]
+}
