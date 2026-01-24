@@ -179,6 +179,8 @@
             0%, 100% { filter: drop-shadow(0 0 8px var(--cyan-glow)); }
             50% { filter: drop-shadow(0 0 16px var(--cyan-glow)); }
         }
+            50% { transform: scale(1.1); opacity: 0.7; }
+        }
 
         .brand-text {
             display: flex;
@@ -1024,6 +1026,7 @@
             overflow: auto;
         }
 
+        /* ========== MOBILE RESPONSIVE ========== */
         @media (max-width: 1400px) {
             .vision-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -1033,6 +1036,166 @@
         @media (max-width: 1000px) {
             .vision-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .network-panel {
+                width: 100%;
+                height: 300px;
+                min-height: 300px;
+            }
+            
+            .activity-panel {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid var(--cyan-faint);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cerebro-header {
+                flex-wrap: wrap;
+                padding: 12px 16px;
+                gap: 12px;
+            }
+            
+            .brand {
+                order: 1;
+            }
+            
+            .metrics-row {
+                order: 3;
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .status-indicator {
+                order: 2;
+            }
+            
+            .music-btn {
+                order: 2;
+            }
+            
+            .metric {
+                padding: 8px 12px;
+            }
+            
+            .metric-value {
+                font-size: 18px;
+            }
+            
+            .filter-tabs {
+                padding: 8px 12px;
+                gap: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .filter-tab {
+                padding: 6px 10px;
+                font-size: 9px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            
+            .network-panel {
+                height: 250px;
+                min-height: 250px;
+            }
+            
+            .canvas-legend {
+                display: none;
+            }
+            
+            .feed-item {
+                padding: 12px;
+            }
+            
+            .item-content {
+                font-size: 12px;
+            }
+            
+            .bot-detail-panel {
+                width: 100%;
+                max-width: none;
+            }
+            
+            .vision-panel {
+                padding: 12px;
+            }
+            
+            .vision-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cerebro-header {
+                padding: 10px 12px;
+            }
+            
+            .brand-title {
+                font-size: 16px;
+                letter-spacing: 4px;
+            }
+            
+            .brand-sub {
+                font-size: 8px;
+            }
+            
+            .brand-icon {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .metric-value {
+                font-size: 16px;
+            }
+            
+            .metric-label {
+                font-size: 8px;
+            }
+            
+            .network-panel {
+                height: 200px;
+                min-height: 200px;
+            }
+            
+            .filter-tabs {
+                padding: 6px 10px;
+            }
+            
+            .filter-tab {
+                padding: 5px 8px;
+                font-size: 8px;
+            }
+            
+            .activity-feed {
+                padding: 8px;
+            }
+            
+            .feed-item {
+                padding: 10px;
+                margin-bottom: 8px;
+            }
+            
+            .item-agent {
+                font-size: 11px;
+            }
+            
+            .item-badge {
+                font-size: 8px;
+                padding: 2px 6px;
+            }
+            
+            .item-content {
+                font-size: 11px;
             }
         }
 
@@ -1263,7 +1426,197 @@
             pointer-events: none;
             z-index: 8999;
         }
-    </style>
+    
+        
+
+        
+        
+
+        
+        
+
+        
+        
+
+        
+        
+
+        
+        /* ========== MOBILE LAYOUT ========== */
+        .mobile-view-toggle {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-view-toggle {
+                display: flex !important;
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 300;
+                background: rgba(0, 20, 30, 0.95);
+                border: 1px solid var(--cyan-glow);
+                border-radius: 25px;
+                padding: 4px;
+                gap: 4px;
+                backdrop-filter: blur(10px);
+            }
+            
+            .mobile-view-toggle button {
+                padding: 10px 20px;
+                border: none;
+                background: transparent;
+                color: var(--cyan-glow);
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 1px;
+                border-radius: 20px;
+                cursor: pointer;
+            }
+            
+            .mobile-view-toggle button.active {
+                background: var(--cyan-glow);
+                color: #000;
+            }
+            
+            .cerebro-header {
+                height: auto !important;
+                padding: 10px 16px !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            
+            .brand-icon { width: 26px !important; height: 26px !important; }
+            .brand-title { font-size: 15px !important; letter-spacing: 3px !important; }
+            .brand-sub { display: none !important; }
+            
+            .metrics-row {
+                order: 3 !important;
+                width: 100% !important;
+                justify-content: space-between !important;
+                padding-top: 8px !important;
+                border-top: 1px solid rgba(0,255,255,0.1) !important;
+            }
+            
+            .metric { padding: 0 !important; background: none !important; }
+            .metric-value { font-size: 18px !important; }
+            .metric-label { font-size: 9px !important; }
+            .status-badge { display: none !important; }
+            .music-btn { order: 2 !important; }
+            
+            .main-container {
+                position: fixed !important;
+                top: 90px !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 70px !important;
+                display: none;
+            }
+            
+            .main-container.mobile-visible { display: block !important; }
+            .canvas-legend { display: none !important; }
+            .canvas-controls { bottom: 10px !important; transform: scale(0.9); }
+            
+            .feed-panel {
+                position: fixed !important;
+                top: 90px !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 70px !important;
+                width: 100% !important;
+                border: none !important;
+            }
+            
+            .feed-panel.mobile-hidden { display: none !important; }
+            
+            .filter-tabs { padding: 10px 12px !important; gap: 6px !important; overflow-x: auto !important; }
+            .filter-tab { padding: 8px 12px !important; font-size: 10px !important; white-space: nowrap !important; }
+            
+            .activity-feed { padding: 10px 12px !important; }
+            .feed-item { padding: 14px !important; margin-bottom: 10px !important; }
+            .item-agent { font-size: 15px !important; }
+            .item-content { font-size: 14px !important; line-height: 1.5 !important; }
+            .emotion-chip { font-size: 12px !important; }
+        }
+
+
+        /* ========== CA SECTION ========== */
+        .ca-section {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .ca-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: rgba(8, 8, 15, 0.9);
+            border: 1px solid var(--cyan-faint);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ca-item:hover {
+            border-color: var(--cyan-glow);
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .ca-label {
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .ca-address {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--cyan-glow);
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .ca-copy {
+            font-size: 12px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .ca-item:hover .ca-copy {
+            opacity: 1;
+        }
+
+        .ca-item.copied {
+            border-color: var(--chat-green);
+        }
+
+        .ca-item.copied .ca-address {
+            color: var(--chat-green);
+        }
+
+        @media (max-width: 768px) {
+            .ca-section {
+                bottom: 80px;
+                right: 10px;
+                left: 10px;
+            }
+            .ca-address {
+                max-width: 100%;
+                font-size: 9px;
+            }
+        }
+        </style>
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
@@ -1349,6 +1702,11 @@
                 </svg>
             </button>
         </header>
+    <!-- Mobile View Toggle -->
+    <div class="mobile-view-toggle" id="mobileViewToggle">
+        <button id="showNetworkBtn">NETWORK</button>
+        <button id="showFeedBtn" class="active">FEED</button>
+    </div>
 
     <!-- Agent Filter Indicator -->
     <div class="agent-filter-indicator" id="agentFilterIndicator">
@@ -1448,6 +1806,15 @@
         </div>
 
         <a href="/" class="back-link">&larr; MAIN</a>
+        <!-- CA Section -->
+        <div class="ca-section">
+            <div class="ca-item" onclick="copyCA(this, '6WVA2BBmNhbHJHcK6JcYczUc2L6omgAhDk6yJhuopump')" title="Click to copy">
+                <span class="ca-label">Realis CA</span>
+                <span class="ca-address">6WVA2BBmNhbHJHcK6JcYczUc2L6omgAhDk6yJhuopump</span>
+                <span class="ca-copy">📋</span>
+            </div>
+        </div>
+
     </div>
 
     <div class="scanlines"></div>
@@ -1890,7 +2257,7 @@
                         ${emotionHistory.length > 0 ? `
                         <div style="margin-top: 10px;">
                             <div class="emotion-history">
-                                ${emotionHistory.slice(-5).map(e => {
+                                ${[...new Set(emotionHistory)].slice(-5).map(e => {
                                     const ed = emotionData[e] || emotionData.neutral;
                                     return `<div class="emotion-chip"><span class="emotion-chip-dot" style="background: ${ed.color}"></span>${e}</div>`;
                                 }).join('')}
@@ -2541,6 +2908,50 @@
 
         resizeCanvas();
         render();
+    </script>
+<script>
+    // Mobile view toggle
+    document.addEventListener("DOMContentLoaded", function() {
+        const showNetworkBtn = document.getElementById("showNetworkBtn");
+        const showFeedBtn = document.getElementById("showFeedBtn");
+        const mainContainer = document.querySelector(".main-container");
+        const feedPanel = document.querySelector(".feed-panel");
+        
+        if (showNetworkBtn && showFeedBtn && mainContainer && feedPanel) {
+            showNetworkBtn.addEventListener("click", function() {
+                showNetworkBtn.classList.add("active");
+                showFeedBtn.classList.remove("active");
+                mainContainer.classList.add("mobile-visible");
+                feedPanel.classList.add("mobile-hidden");
+                // Trigger canvas resize after DOM updates
+                setTimeout(function() {
+                    window.dispatchEvent(new Event('resize'));
+                }, 50);
+            });
+            
+            showFeedBtn.addEventListener("click", function() {
+                showFeedBtn.classList.add("active");
+                showNetworkBtn.classList.remove("active");
+                mainContainer.classList.remove("mobile-visible");
+                feedPanel.classList.remove("mobile-hidden");
+            });
+        }
+    });
+</script>
+
+
+    <script>
+        function copyCA(element, address) {
+            navigator.clipboard.writeText(address).then(function() {
+                element.classList.add('copied');
+                const copyIcon = element.querySelector('.ca-copy');
+                copyIcon.textContent = '✓';
+                setTimeout(function() {
+                    element.classList.remove('copied');
+                    copyIcon.textContent = '📋';
+                }, 2000);
+            });
+        }
     </script>
 </body>
 </html>
