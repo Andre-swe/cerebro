@@ -99,12 +99,23 @@ const modes_list = [
         last_time: Date.now(),
         max_stuck_time: 20,
         prev_dig_block: null,
+        // New: cooldown and bad location tracking
+        last_unstuck_time: 0,
+        unstuck_cooldown: 60000, // 60 seconds between unstuck attempts
+        bad_locations: [], // Track locations that caused getting stuck
+        max_bad_locations: 10,
         update: async function (agent) {
-            if (agent.isIdle()) { 
+            if (agent.isIdle()) {
                 this.prev_location = null;
                 this.stuck_time = 0;
                 return; // don't get stuck when idle
             }
+
+            // Cooldown check - don't trigger unstuck too frequently
+            if (Date.now() - this.last_unstuck_time < this.unstuck_cooldown) {
+                return;
+            }
+
             const bot = agent.bot;
             const cur_dig_block = bot.targetDigBlock;
             if (cur_dig_block && !this.prev_dig_block) {
@@ -120,13 +131,40 @@ const modes_list = [
             }
             const max_stuck_time = cur_dig_block?.name === 'obsidian' ? this.max_stuck_time * 2 : this.max_stuck_time;
             if (this.stuck_time > max_stuck_time) {
-                // Disabled chat spam: say(agent, 'I\'m stuck!');
                 this.stuck_time = 0;
-                execute(this, agent, async () => {
-                    const crashTimeout = setTimeout(() => { agent.cleanKill("Got stuck and couldn't get unstuck") }, 10000);
-                    await skills.moveAway(bot, 5);
+                this.last_unstuck_time = Date.now();
+
+                // Track this as a bad location to avoid
+                const stuckPos = bot.entity.position.clone();
+                this.bad_locations.push(stuckPos);
+                if (this.bad_locations.length > this.max_bad_locations) {
+                    this.bad_locations.shift();
+                }
+
+                // Use silent execute to avoid LLM generating "I'm stuck!" responses
+                executeSilent(this, agent, async () => {
+                    const crashTimeout = setTimeout(() => { agent.cleanKill("Got stuck and couldn't get unstuck") }, 15000);
+
+                    // Try to move further away (15 blocks instead of 5)
+                    // and avoid going back toward bad locations
+                    let escaped = false;
+                    for (let attempt = 0; attempt < 3 && !escaped; attempt++) {
+                        const escapeDistance = 15 + (attempt * 5); // 15, 20, 25 blocks
+                        await skills.moveAway(bot, escapeDistance);
+
+                        // Check if we're far enough from all bad locations
+                        const currentPos = bot.entity.position;
+                        const tooClose = this.bad_locations.some(badPos =>
+                            currentPos.distanceTo(badPos) < 10
+                        );
+
+                        if (!tooClose) {
+                            escaped = true;
+                        }
+                    }
+
                     clearTimeout(crashTimeout);
-                    // Disabled chat spam: say(agent, 'I\'m free.');
+                    console.log(`[Unstuck] ${agent.name} escaped to ${bot.entity.position.toString()}`);
                 });
             }
             this.last_time = Date.now();
@@ -328,6 +366,25 @@ async function execute(mode, agent, func, timeout=-1) {
         agent.handleMessage(role, `(AUTO MESSAGE)Your previous action '${interrupted_action}' was interrupted by ${mode.name}.
         Your behavior log: ${logs}\nRespond accordingly.`);
     }
+}
+
+/**
+ * Silent execute - runs mode action without triggering LLM auto-prompt.
+ * Use this for frequent/repetitive modes like unstuck to prevent chat spam.
+ */
+async function executeSilent(mode, agent, func, timeout=-1) {
+    if (agent.self_prompter && agent.self_prompter.isActive())
+        agent.self_prompter.stopLoop();
+
+    mode.active = true;
+    let code_return = await agent.actions.runAction(`mode:${mode.name}`, async () => {
+        await func();
+    }, { timeout });
+    mode.active = false;
+
+    // Clear behavior log but don't send auto-message
+    agent.bot.modes.flushBehaviorLog();
+    console.log(`Mode ${mode.name} (silent) finished, code_return: ${code_return.message}`);
 }
 
 let _agent = null;
